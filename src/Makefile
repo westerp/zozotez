@@ -1,5 +1,5 @@
 #
-# $Id: Makefile 51 2011-07-09 00:17:15Z westerp $
+# $Id$
 #
 # This file is part of Zozotez
 #
