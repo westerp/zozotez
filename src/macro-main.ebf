@@ -1,0 +1,114 @@
+;;;; $Id: macro-print.ebf 44 2011-07-04 23:33:08Z westerp $
+;;;;
+;;;; @encoding UTF-8
+;;;; @package Zozotez http://sylwester.no/zozotez/
+;;;; @author Pål Wester <pal.wester.bf@sylwester.no>
+;;;;
+;;;; Zozotez is free software: you can redistribute it and/or modify
+;;;; it under the terms of the GNU General Public License as published by
+;;;; the Free Software Foundation, either version 3 of the License, or
+;;;; (at your option) any later version.
+;;;;
+;;;; Zozotez is distributed in the hope that it will be useful,
+;;;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;;;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;;;; GNU General Public License for more details.
+;;;;
+;;;; You should have received a copy of the GNU General Public License
+;;;;
+;;;; print implementation (print what [specials])
+;;;; Some characters are unavailable and therefore have some symbols
+;;;; These will be translated to their respective char with specials
+;;;; set to ANYTHING. To not use specials don't supply the extra parameter
+;;;;
+;;;; main flow of program / eval implementation
+;;;; This early stage it will be a (loop (print(read)))
+{main
+    $ax|"Zozotez read-print-loop (no eval) Press CTRL+d or () to exit (but not NIL)
+"
+      we dont have eval so we do read print loop
+      $ax(-)+(-
+      |"Zozotez-moi~>"(-)
+      $ax &lis_open_new_addr
+      &lis_set_type_list
+      &lis_close
+      $ax(-$bx+$cx+)
+      $bx &pc_push
+      $cx &pc_push
+      $ax &zozot_read
+      $ax &pc_pop
+      $ax-&lis_open
+      $bx = &lis_get_car
+      &lis_close
+       if $bx (
+            $ax &zozot_print
+            $ax+
+       )
+    )
+;   $ax4+   &pc_push ; push 3 (SCRATCH) to stack
+;   $ax     &pc_push ; push 0 (NIL) to stack
+;
+;   #$ax &pc_pop ; gets expression
+;   #while $ax is not null
+;   (-
+;     #&lis_open           ; open list element
+;     #$ax &pc_pop $ax- ; gets where to setf the answer
+;     #$cx = &lis_get_type ; get this element type
+;     #$dx+
+;     if $cx
+;     [
+;         $dx-                  ; reset flag
+;         $cx(-$ex+$bx+)        ; make more copies |aret|btype|c0|d0|endtype
+;         %cx &TYPE_NUM         ; number is the last type that evaluates to itself
+;         %cx &substract        ; substract cx from end
+;         $dx+                  ; set zero flag
+;         if $ex is not null
+;         [ we keep dx as a flag
+;           %ex- reduce by 1
+;           (- not symbol
+;            (- not qlist
+;             (- not function
+;              (- ex now have subtype and its a list
+;                 ; only s supported subtypes INT and SYM
+;                 ; everything else should evaluate to LOC_E RROR
+;                 %ex - check for TYPE_INT
+;                 (--    check for TYPE_SYM
+;                  (
+;                     %ex(-) resetting
+;                     $dx-
+;                     $bx(-)
+;                     &lis_close
+;                     $ax &lis_open
+;                     &lis_set_error
+;                     &lis_close
+;                  ) $dx (- in list symbol  )
+;                 )  $dx (- in apply        )
+;              ) $dx (- in list-macro       )
+;             )  $dx (- in list-function    )
+;            )   $dx (- in qlist  $bx(-) $ax &zozot_quote         )
+;           )    $dx (- in symbol $bx(-) $ax &symbol_to_reference )
+;           $dx
+;         ] @ex ; make ebf think end was zero
+;         if $dx
+;         [-
+;             ; no evaluation needed since it's internal or number type
+;             $cx = &lis_close_addr
+;             $ax &lis_open
+;             &bx &lis_set_type
+;             $cx &lis_set_car
+;             &lis_close
+;         ]
+;         $dx
+;     ] @cx    ; make ebf think cx was zero
+;     if $dx
+;     [-
+;       &lis_close
+;       $ax &lis_open
+;       &lis_set_error
+;       &lis_close
+;       $end
+;     ]
+;     #
+;     $ax &pc_pop
+;   )
+}

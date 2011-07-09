@@ -1,0 +1,48 @@
+;;;; $Id: print.ebf 41 2011-07-01 00:04:46Z westerp $
+;;;;
+;;;; @encoding UTF-8
+;;;; @package Zozotez http://sylwester.no/zozotez/
+;;;; @author Pål Wester <pal.wester.bf@sylwester.no>
+;;;;
+;;;; Zozotez is free software: you can redistribute it and/or modify
+;;;; it under the terms of the GNU General Public License as published by
+;;;; the Free Software Foundation, either version 3 of the License, or
+;;;; (at your option) any later version.
+;;;;
+;;;; Zozotez is distributed in the hope that it will be useful,
+;;;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;;;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;;;; GNU General Public License for more details.
+;;;;
+;;;; You should have received a copy of the GNU General Public License
+;;;;
+;;;; To just build and test print functionality
+;;;; cat version.ebf macro-read.ebf zozotez-base.ebf test/read.ebf |
+;;;;    ebf | tee zozotez-read.bf
+
+;;; TODO: This only runs zozot_print. It actually never test anything
+;; this prints out NIL T ERR NUM (in this order)
+$ax = &lis_open_new_addr
+$ax &pc_push
+&lis_set_type_list
+$ax = &lis_get_addr_new
+$ax &lis_set_cdr
+$ax = &lis_get_addr_2new
+$ax &lis_set_car
+&lis_open_new_next
+&lis_set_type_list
+$ax = &lis_get_addr_new
+$ax &lis_set_car
+&lis_open_new_next
+&lis_set_type_list
+&lis_close
+$ax+++ &pc_push
+$ax++ &pc_push
+$ax+ &pc_push
+
+$bx- &pc_pop
+$bx+(-
+  $ax &zozot_print
+  $bx &pc_pop
+)
+

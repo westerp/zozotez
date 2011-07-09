@@ -1,0 +1,910 @@
+;;;; $Id: zozotez-base.ebf 51 2011-07-09 00:17:15Z westerp $
+;;;;
+;;;; @encoding UTF-8
+;;;; @package Zozotez http://sylwester.no/zozotez/
+;;;; @author Pål Wester <pal.wester.bf@sylwester.no>
+;;;;
+;;;; Zozotez is free software: you can redistribute it and/or modify
+;;;; it under the terms of the GNU General Public License as published by
+;;;; the Free Software Foundation, either version 3 of the License, or
+;;;; (at your option) any later version.
+;;;;
+;;;; Zozotez is distributed in the hope that it will be useful,
+;;;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;;;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;;;; GNU General Public License for more details.
+;;;;
+;;;; You should have received a copy of the GNU General Public License
+;;;;
+;;;; This file implements the low lever data structures and macroes that
+;;;; initialize data.
+;;;;
+
+;;; This is for my debugger, bf1.pl,  to give memory locations labels
+ML/sym_crumble/string_ref/assoc_ref/plist_ref/ends/ax/bx/cx/dx/ex/fx/end/type/car/cdr/lis_crumble
+PTR=1068/4/4
+
+Stack area
+:stack_tmp
+:stack_mark2
+:stack_mark
+:stack_top2
+:stack_top
+:stack_end
+
+Symbol array area
+:sym_crumble
+:string_ref
+:assoc_ref
+:plist_ref
+
+Shared with logic unit
+
+;;; The program may utiilze ends and end, even zeroed cells in the two first lisp data cells since they are NIL/T
+;;; The requirement is that the code cleans up afterwards and makes sure they are zero when stack/data/symbol-functions
+;;; are run.
+
+:ends ; serves as end of symbol array and need to be empty when element macroes or stack operations is applied
+
+;;; Registers used by LISP functions
+:ax
+:bx
+:cx
+:dx
+:ex
+:fx
+
+:end  ; serves as a end of lisp data and needs to be empty when element macroes is applied
+
+LISP data
+:type       ; includes the type of this object. If list it also have info on what it referencing
+:car        ; car (this content/ref)
+:cdr        ; cdr (next content/ref)
+:lis_crumble; path to the open element (but not the opened one)
+
+
+;;; INIT and MAIN macoes
+;;; sets up the memory
+;;; moves pointer to a known area accoring to memory map
+{init_stack_symbol
+  -63>->                  ; 2 x 31 cell stack (in the future ths will be increased to 254 to be safe
+  252> array_crumble      ; makes room
+  252> string_ref         ; for array
+  252> assoc_ref          ; in this very
+  252> plist_ref             ; optimized way
+  @ends
+}
+
+;;; set known data
+;;; this will initialize the
+;;; internal functions and texts
+{init_lisp_data
+  $type &NIL
+  $type &TYPE_SYM
+
+  $lis_crumble+@end
+  $type &T
+  $type &TYPE_SYM
+
+  $lis_crumble+@end
+  $type &ERR
+  $type &TYPE_SYM
+
+  $lis_crumble+@end
+  $type &QUO
+  $type &TYPE_SYM
+
+  $lis_crumble+@end
+  $type &TYPE_NUM
+  $car ~"T"
+
+  $lis_crumble+@end
+  $type &TYPE_NUM
+  $car ~"N"
+  $cdr 6+
+
+  $lis_crumble+@end
+  $type &TYPE_NUM
+  $car ~"I"
+  $cdr 7+
+
+  $lis_crumble+@end
+  $type &TYPE_NUM
+  $car ~"L"
+
+  $lis_crumble+@end
+  $type &TYPE_NUM
+  $car ~"E"
+  $cdr 9+
+
+  $lis_crumble+@end
+  $type &TYPE_NUM
+  $car ~"R"
+  $cdr 10+
+
+  $lis_crumble+@end
+  $type &TYPE_NUM
+  $car ~"R"
+
+  $lis_crumble+@end
+  $type &TYPE_NUM
+  $car ~"q"
+  $cdr 12+
+
+  $lis_crumble+@end
+  $type &TYPE_NUM
+  $car ~"u"
+  $cdr 13+
+
+  $lis_crumble+@end
+  $type &TYPE_NUM
+  $car ~"o"
+  $cdr 14+
+
+  $lis_crumble+@end
+  $type &TYPE_NUM
+  $car ~"t"
+  $cdr 15+
+
+  $lis_crumble+@end
+  $type &TYPE_NUM
+  $car ~"e"
+
+  &lis_from
+  &lis_close
+
+  $ends &NIL
+  $ax &sym_open
+  $ax &sym_zset_assoc_ref
+  $ax 5+ &sym_set_string_ref
+  &sym_close
+
+  $ends &T
+  $ax &sym_open
+  $ax+ &sym_zset_assoc_ref
+  $ax 4+ &sym_set_string_ref
+  &sym_close
+
+  $ends &ERR
+  $ax &sym_open
+  $ax++ &sym_zset_assoc_ref
+  $ax 9+ &sym_set_string_ref
+  &sym_close
+
+  $ends &QUO
+  $ax &sym_open
+  $ax+++ &sym_zset_assoc_ref
+  $ax 11+ &sym_set_string_ref
+  &sym_close
+
+}
+
+
+;;; LISP functions
+
+;;; (defmacro symbol_to_reference (reference symbol)
+;;; 	`(setf ,reference ,symbol))
+{symbol_to_reference
+  ^1symbol = &lis_get_car
+  &lis_close
+  ^0reference &lis_open
+  ^1symbol &sym_open
+  ^1error+
+  #^0symbol = &sym_get_assoc_ref
+  # while ^0symbol
+  (-
+      %0symbol &lis_set_car
+      ^0artype = &sym_get_artype
+      ^0artype-  &lis_set_type
+      ^1error-
+  )
+  if ^1error
+  (-
+      &lis_set_error
+  )
+  &lis_close
+  &sym_close
+}
+
+;; ((lambda (rep)
+
+
+;; (defmacro zozot_set (reference symbol symbol_target_type symbol_target)
+;;  `(setf ,reference (set ',symbol ,symbol_target ))
+;; @argument reference Where to store the
+;; @argument symbol The symbol to set
+;; @argument symbol_target_type type element of target cell
+;; @argument symbol_target address of target cell
+;; @side-effect sets symbol table
+;; expects arguments to be golden
+{zozot_set
+;   ^0reference &lis_open
+;   ^1symbol &sym_open
+;   ^2ttype (- ^1+ ^0+ )
+;   ^0ttype &sym_zset_artype
+;   ^1ttype &lis_set_type ;NB: appends type
+;   ^3target (- ^2+ ^0+)
+;   ^2target &lis_set_car
+;   &lis_close
+;   ^0target &sym_zset_assoc_ref
+;   &sym_close
+}
+
+;; (defmacro zozot_car (reference target)
+;;  `(setf ,reference (car ',argument_ref))
+{zozot_car
+;     ^2target &lis_open
+;     ^2car =  &lis_get_car
+;     &lis_close
+;     ^0reference &lis_open
+;     ^2car &lis_set_car
+;     &lis_close
+}
+
+;; (defmacro zozot_cdr (reference target)
+;;  `(setf ,reference (cdr ',argument_ref))
+;; NB: Does not support pair.
+{zozot_cdr
+;     ^1target &lis_open
+;     ^1cdr =  &lis_get_cdr
+;     &lis_close
+;     ^0reference &lis_open
+;     ^1cdr &lis_set_car
+;     &lis_close
+}
+
+;; (defmacro zozot_atom (reference target_type target)
+;;  `(setf ,reference (atom ',target))
+{zozot_atom
+;     ^0reference &lis_open
+;     &lis_to $type &TYPE_SYM &lis_from
+;     ^3zero+
+;     if ^2target
+;     [
+;       (-)
+;       ^3zero &TYPE_SYM ; 3zero has 1 from before so its the NEXT type.
+;       &substract_left
+;       ^2atom+
+;       if ^1target_type [(-) ^2atom- ] *-1
+;       if ^2atom
+;       [-
+;         &lis_to $car &LOC_T &lis_from
+;         ^3zero
+;       ]
+;     ] *-1
+;     if ^3zero
+;     [-
+;       &lis_to $car &LOC_T &lis_from
+;       ^4endif
+;     ]
+}
+
+;; (defmacro zozot_eq (reference target1_type target1 target2_type target2)
+;;  `(setf ,reference (eq ',target1 ',target2))
+{zozot_eq
+;     ; eq will work for al types where the address is the same
+;     ; or they have similar car values and are of similar type
+;
+;     ^1target1(- ^2target2- ^3target1+)
+;     if ^2target2 is not equal to 1target1
+;     [
+;         ^3target1(- ^2target2+ ^1target1+)
+;         TODO: FInish
+;         ^3target1
+;     ] *-1 ; fix pointer to assume false
+;     if ^3target1 is not null
+;     [ equal address
+;           %3target1(-)
+;           ^2target2(-)
+;           ^1target1(-)
+;           ^0reference &lis_open
+;           &lis_to $car &LOC_T &lis_from
+;           &lis_to $type &TYPE_SYM
+;           &lis_close
+;           ^4zero
+;     ]
+}
+
+
+{zozot_eval
+
+}
+
+{zozot_quote
+;   ^1ttype = &lis_get_car
+;   ^2target = &lis_get_cdr
+;   &lis_close
+;   ^0reference &lis_open
+;   ^1ttype &lis_set_type
+;   ^2target &lis_set_car
+;   &lis_close
+}
+;; some known symbol hashes
+;; case sensetive NIL/T are upper, rest is lower
+;; quote is never a symbol since it's special '
+;; uses the cell before in order to make it
+{NIL      36   6+(-> 6+)>+  }
+{T       167  13+(->13+)>-- }
+{ERR OR  146  12+(->12+)>++ }
+{QUO     249  16+(->16+)>-------}
+; {COND    66   8+(-> 8+)>++ }
+; {EQ      44   7+(-> 6+)>++ }
+; {ATOM   211  15+(->14+)>+  }
+; {CONS    51   7+(-> 7+)>++ }
+; {CAR     20   4+(-> 5+)    }
+; {CDR     47   7+(-> 7+)--  }
+; {RD     148 }
+; {EVAL    79 }
+; {PRINT   21 }
+; {LAMBDA  42 }
+; {QUOTE  250 }
+; {READL  145 }
+; {REP    135 }
+
+;; Lisp data types
+;; A list element will have the car-type added
+;; so a list with a symbol , eg. (a) the list will be &TYPE_LIS+&TYPE_SYM
+;; not sure what to do with dotted pair, but I'd like to support it
+;; the idea is that functions should be very little type aware eg. (cdr "str") => "tr"
+;; while (car "str") might not do what you want.
+{TYPE_NUL (-)}   ; available cell
+;{TYPE_INT 1+}   ; internal function
+{TYPE_NUM 1+}   ; number (the strings of symbol names are stored as number sequence)
+{TYPE_SYM 2+}   ; symbol (hash in car)
+{TYPE_LIS 3+}   ; list
+{TYPE_LAP 4+}   ; list apply 1, eg. expr (+ a b) the head is LIST when + is evaluated it's AP1, when AP2 all parameters are evaluated
+{TYPE_LA2 5+}   ; list apply 2
+;{TYPE_QCH 4+)   ; a list element after quote character (only used by read). 'something => [ LIS ->] [ QCH
+;{TYPE_LFU 5+}   ; list element function                                                      `-SYM QUOTE `-SYM somthing
+;{TYPE_LMA 6+}   ; list element macro
+;{TYPE_LIS 7+}   ; empty list type
+
+;; Known locations
+{LOC_NIL  (-)}
+{LOC_T RUE 1+}
+{LOC_E RROR2+}
+
+;;;USER functions
+
+;; read that makes any-eof convensions to 0
+{read ^1+^0,[+[-^1-]]*-1^1[-^2]}
+
+;; read that makes any of-convensions AND linefeed to 0
+{read_cr ^1+^0,[10-[11+[-^1-]]]*-1^1[-^2]}
+
+;;; get methods
+;;; expect the symbol array to be open
+;;; copies variable to ^0
+;;; ends up in var area
+;;; but does not close array
+{sym_get_string_ref
+  &sym_to           ; moves to array element
+  $string_ref(-     ; goes to string_ref
+    &sym_backup     ; back up to higher crumble
+    &sym_from       ; move back to variable
+    ^0+             ; set calling parameter
+    &sym_to         ; back to array
+  )                 ; self balancing
+  &sym_restore      ; copies backupo to current position
+  &sym_from         ; goes back to variable area
+}
+
+
+{sym_get_assoc_ref
+  &sym_to           ; moves to array element
+  $assoc_ref(-      ; goes to assoc_ref
+    &sym_backup     ; back up to higher crumble
+    &sym_from       ; move back to variable
+    ^0+             ; set calling parameter
+    &sym_to         ; back to array
+  )                 ; self balancing
+  &sym_restore      ; copies backup to current position
+  &sym_from         ; goes back to variable area
+}
+
+{sym_get_plist_ref
+  &sym_to           ; moves to array element
+  $plist_ref(-      ; goes to plist_ref
+    &sym_backup     ; back up to higher crumble
+    &sym_from       ; move back to variable
+    ^0+             ; set calling parameter
+    &sym_to         ; back to array
+  )                 ; self balancing
+  &sym_restore      ; copies backupo to current position
+  &sym_from         ; goes back to variable area
+}
+
+;;; set methods
+;;; expect the symbol array to be open
+;;; pours ^0 to variable (destructive)
+;;; if element is not empty the old value gets
+;;; added
+{sym_set_string_ref
+  ^0+(-             ; we are at ^0
+    &sym_to         ; moves to array element
+    $string_ref+    ; goes to string_ref
+    &sym_from       ; move back to variable
+  )                 ; self balancing
+}
+
+{sym_zset_assoc_ref
+  &sym_to
+  $assoc_ref(-)+
+  &sym_from
+  ^0(-              ; we are at ^0
+    &sym_to         ; moves to array element
+    $assoc_ref+     ; goes to string_ref
+    &sym_from       ; move back to variable
+  )                 ; self balancing
+}
+
+{sym_zset_plist_ref
+  &sym_to
+  $plist_ref(-)+
+  &sym_from
+  ^0(-              ; we are at ^0
+    &sym_to         ; moves to array element
+    $plist_ref+     ; goes to plist_ref
+    &sym_from       ; move back to variable
+  )                 ; self balancing
+}
+;;; opens symbol element dictated by ^0
+;;; ^0 will be empty when done
+{sym_open
+  (-
+    $sym_crumble            ; move from current position
+    [@ends to $sym_crumble]  ; to the first empty array_crumble
+    $sym_crumble+[$ends]     ; move back to ends
+  )
+}
+
+
+;;; closes the symbol array from variable area
+{sym_close &sym_to $ends[- @sym_crumble to $ends] }
+
+;;; push ^0 onto program stack using ends
+;;; as marker
+;;; when stack is full it underflows the memory
+;;; and for some interpreters (not many) the stack still works
+{pc_push
+  &stack_open
+  $stack_top
+  &stack_empty ; *x(0)|W|3|m(-2)|0
+  @stack_top+
+  $stack_mark-
+  &stack_from
+  ^0(-
+    &stack_to
+    $stack_top+
+    &stack_from
+  )
+  &stack_to_close
+  &stack_to_start ; 2|W|3|m(-2)|*0
+  <+
+  &stack_from_close
+}
+
+;;; push ^0 onto util stack using ends
+;;; as marker
+;;; when stack is full it underflows the memory
+;;; and for some interpreters (not many) the stack still works
+{stack_push
+  &stack_open
+  &stack_empty ; W|*x(0)|3|m(-2)|0
+  @stack_top+
+  $stack_mark-
+  &stack_from
+  ^0(-
+    &stack_to
+    $stack_top+
+    &stack_from
+  )
+  &stack_to_close
+  &stack_to_start ; W|x(0)|3|m(-2)|0|*0
+  <<+
+  &stack_from_close
+}
+
+;;; pops stack. the value popped
+;;; is 1 higher than pushed so
+;;; if value is zero, stack was empty
+{pc_pop
+    &stack_open
+    $stack_top
+    @stack_mark
+    ( check for last element
+      &stack_empty
+      @stack_mark-
+      $stack_top
+         (-
+           &stack_from
+           ^0+
+           &stack_to
+         )
+       $stack_mark+
+       $stack_top @stack_mark
+     )
+     &stack_to_start
+     <+
+     &stack_from_close
+}
+
+;;; pops stack. the value popped
+;;; is 1 higher than pushed so
+;;; if value is zero, stack was empty
+{stack_pop
+    &stack_open
+    $stack_top2
+    @stack_mark
+    ( check for last element
+      &stack_empty
+      @stack_mark-
+      $stack_top
+         (-
+           &stack_from
+           ^0+
+           &stack_to
+         )
+       $stack_mark+
+       $stack_top @stack_mark
+     )
+     &stack_to_start
+     <<+
+     &stack_from_close
+}
+
+;;; reports if stack was empty
+{stack_is_nonempty
+  $ends- &stack_to @stack_end
+  $stack_top2
+  [ ;; stack from/to are thought to work from top not from mark
+    ;; which makes this function particulary messy.
+    >>>@stack_top
+    &stack_from
+    ^0+
+    $ends
+    @stack_end
+    $stack_mark
+    [<] @stack_top2
+  ]
+  $stack_end
+  &stack_from_close
+}
+
+
+;;; opens first new element which is available
+;;; eg. the one which address is returned by
+;;; lis_get_addr_new
+{lis_open_new
+  $type[              ; start at first type (NIL)
+        $lis_crumble+ ; set cruble while type set
+        @end          ; assume end for next element
+        $type         ; move to next type
+       ]              ; continue until a cell without type set is found
+  &lis_from
+}
+
+;;; you have use lis_open_new and
+;;; want the next new to be opened in place
+{lis_open_new_next
+  &lis_to
+  &lis_open_new
+}
+
+;;; opens a new element and returns it's address
+;;; in ^0
+{lis_open_new_addr
+  $type
+  [                          ; start at first type (NIL)
+    $lis_crumble+            ; set cruble while type set
+    @end                     ; assume end for next element
+    $type                    ; move to next type
+  ]                          ; continue until a cell without type set is found
+  $end
+  [                          ; if not end (address is 0)
+    @lis_crumble$end         ; move 2 places back
+    [                        ; while not end
+      $lis_crumble(- $end+)+ ; copy one back to previous crumble
+      $end@lis_crumble$end   ; two places back
+    ]                        ; continue until we actually are at end
+    $lis_crumble             ; lis_crumble actually has the correct index
+    (- ^0+ )+                ; move result to parameter and restore crumble
+    $end
+  ]
+}
+
+;;; opens the element dictated by ^0
+;;; ^0 will be empty when done
+{lis_open
+  (-
+    $lis_crumble            ; move from current position
+    [@end to $lis_crumble]  ; to the first empty array_crumble
+    $lis_crumble+[$end]     ; add 1 move back to ends
+  )
+}
+
+
+;;; the adddress field is actually not a field but the distance from variable area to a
+;;; particular element. NIL=0, T=1, etc. Addr-methods have two. One for a open
+;;; element and one for the element which is next to be allocated
+{lis_get_addr
+  &lis_to
+  $end[                      ;if not end (address is 0)
+    @lis_crumble$end         ;move 2 places back
+    [
+      $lis_crumble(- $end+)+ ; copy one back to previous crumble
+      $end@lis_crumble$end   ; two places back
+    ]                        ; continue until we actually are at end
+    $lis_crumble
+    (- ^0+ )+                ; move result to parameter and restore crumble
+    $end
+  ]
+}
+
+;;; closes the array while returning its address
+{lis_close_addr
+  &lis_to
+  $end[                      ;if not end (address is 0)
+    @lis_crumble$end         ;move 2 places back
+    [
+      $lis_crumble(- $end+)  ; copy one back to previous crumble
+      $end@lis_crumble$end   ; two places back
+    ]                        ; continue until we actually are at end
+    $lis_crumble
+    (- ^0+ )                 ; move result to parameter and restore crumble
+    $end
+  ]
+}
+
+;;; closes the array from variable area
+{lis_close &lis_to $end[- @lis_crumble to $end] }
+
+;;; gets the relative address of a new cell while an array element is open (NOT NIL)
+;;; The open array element should be the last allocated so that next is
+;;; always higher than the open element (eg not between gc's)
+{lis_get_addr_new
+  $type
+  [                          ; start at first type (NIL)
+    $lis_crumble+            ; to cruble while type set
+    @end                     ; assume end for next element
+    $type                    ; move to next type
+  ]                          ; continue until a cell without type set is found
+  ;2 2 2 1 1 *0
+  $end@lis_crumble$end       ; move 2 places back
+  --
+  [++                        ; while not -2
+      $lis_crumble(- $end+)  ; copy one back to previous crumble resetting on the way
+      $end@lis_crumble$end   ; two places back
+   --]++                     ; continue until we actually are at -2
+  ;now we have 2 2 2 *2 x where x is the opened element
+
+  $lis_crumble-(- $end+)      ; copy one back to previous crumble. DO not set crumble
+  $end@lis_crumble$end       ; two places back
+
+  [-
+    $lis_crumble(- $end+)+   ; copy one back to previous crumble
+    $end@lis_crumble$end     ; two places back
+  ]                          ; continue until we actually are at end
+  $lis_crumble
+  (- ^0+ )+                  ; move result to parameter and restore crumble
+}
+
+;;; gets the address of the 2. new cell while an array element is open (NOT NIL)
+;;; The open array element should be the last allocated so that next is
+;;; always higher than the open element (eg not between gc's)
+{lis_get_addr_2new
+  $type
+  [                          ; start at first type (NIL)
+    $lis_crumble+            ; to cruble while type set
+    @end                     ; assume end for next element
+    $type                    ; move to next type
+  ]                          ; continue until a cell without type set is found
+  $lis_crumble+              ; set the crumble of next available
+  @end                       ; and skip past to the next
+  $type                      ; do another search from there
+  [                          ; start at first type (NIL)
+    $lis_crumble+            ; to cruble while type set
+    @end                     ; assume end for next element
+    $type                    ; move to next type
+  ]                          ; continue until a cell without type set is found
+  ;2 2 2 1 1 *0
+  $end@lis_crumble$end       ; move 2 places back
+  --
+  [++                        ; while not -2
+      $lis_crumble(- $end+)  ; copy one back to previous crumble resetting on the way
+      $end@lis_crumble$end   ; two places back
+   --]++                     ; continue until we actually are at -2
+
+  ;now we have 2 2 2 *2 x where x is the opened element
+  $lis_crumble-(- $end+)     ; copy one back to previous crumble. DO not set crumble
+  $end@lis_crumble$end       ; two places back
+
+  [-
+    $lis_crumble(- $end+)+   ; copy one back to previous crumble
+    $end@lis_crumble$end     ; two places back
+  ]                          ; continue until we actually are at end
+  $lis_crumble
+  (- ^0+ )+                  ; move result to parameter and restore crumble
+}
+
+
+;;; normal get methods
+;;; expect the list element to be open (or else you'll change NIL)
+;;; copies variable to ^0
+;;; ends up in var area (end)
+;;; but does not close array
+
+{lis_get_type
+  &lis_to         ; MOVES TO opened list element
+  $type(-         ; goto type data
+    &lis_backup   ; backup to higher crumble
+    &lis_from     ; move back to variable
+    ^0+           ; set calling parameter
+    &lis_to       ; back to list element
+  )               ; self balancing
+  &lis_restore    ; copies backup to current position
+  &lis_from       ; goes back to variable area
+}
+
+{lis_get_car
+  &lis_to         ; MOVES TO opened list element
+  $car(-          ; goto type data
+    &lis_backup   ; backup to higher crumble
+    &lis_from     ; move back to variable
+    ^0+           ; set calling parameter
+    &lis_to       ; back to list element
+  )               ; self balancing
+  &lis_restore    ; copies backup to current position
+  &lis_from       ; goes back to variable area
+}
+
+{lis_get_cdr
+  &lis_to         ; MOVES TO opened list element
+  $cdr(-          ; goto type data
+    &lis_backup   ; backup to higher crumble
+    &lis_from     ; move back to variable
+    ^0+           ; set calling parameter
+    &lis_to       ; back to list element
+  )               ; self balancing
+  &lis_restore    ; copies backup to current position
+  &lis_from       ; goes back to variable area
+}
+
+;;; setter methods that reset previous values
+{lis_zero_type
+  &lis_to
+  $type(-)
+  &lis_from
+}
+
+{lis_zero_car
+  &lis_to
+  $car(-)
+  &lis_from
+}
+
+{lis_zero_cdr
+  &lis_to
+  $cdr(-)
+  &lis_from
+}
+
+;;; this makes the cell available (GC-ed)
+{lis_zero_all
+  &lis_to
+  $cdr(-)
+  $car(-)
+  $type(-)
+  &lis_from
+}
+
+;;; set methods that pours on top of eventual values
+;;; to really set you'll need to do the lis_zero_* first
+;;; or know the call is free,
+{lis_set_type
+  ^0(-                ; we are at ^0
+    &lis_to           ; moves to array element
+    $type+            ; goes to type
+    &lis_from         ; move back to variable
+  )                   ; self balancing
+}
+
+{lis_set_type_quote &lis_to $type &TYPE_LAP &lis_from}
+{lis_set_type_list &lis_to $type &TYPE_LIS &lis_from}
+{lis_set_type_number &lis_to $type &TYPE_NUM &lis_from}
+{lis_set_type_symbol &lis_to $type &TYPE_SYM &lis_from}
+
+
+{lis_set_car
+  ^0(-                ; we are at ^0
+    &lis_to           ; moves to array element
+    $car+             ; goes to car
+    &lis_from         ; move back to variable
+  )                   ; self balancing
+}
+
+{lis_set_cdr
+  ^0(-                ; we are at ^0
+    &lis_to           ; moves to array element
+    $cdr+             ; goes to cdr
+    &lis_from         ; move back to variable
+  )                   ; self balancing
+}
+
+;;; Sets ERROR in open cell.
+{lis_set_error
+  &lis_to
+  $type &TYPE_SYM
+  $car  &LOC_E
+  &lis_from
+}
+
+;;; HELPER macroes
+;;; These should not be used directly but are used by
+;;; USER macroes
+;;; Order should be by usage asc, size desc
+
+;;; array restore copies from
+;;; higher crumble to ^0
+{sym_restore
+  $sym_crumble@ends
+  $sym_crumble
+    (-
+      $ends@sym_crumble^0+
+      $sym_crumble@ends
+    )
+  $ends@sym_crumble
+array restore end
+}
+
+;;; array restore copies from
+;;; higher crumble to ^0
+{lis_restore
+  $lis_crumble@end
+  $lis_crumble
+    (-
+      $end@lis_crumble^0+
+      $lis_crumble@end
+    )
+  $end@lis_crumble
+array restore end
+}
+
+;;; array backup increases the higher crumble
+{sym_backup
+  $sym_crumble@ends
+  $sym_crumble+$ends@sym_crumble
+}
+;;; array backup increases the higher crumble
+{lis_backup
+  $lis_crumble@end
+  $lis_crumble+$end@lis_crumble
+}
+
+;;; internal stack operation macroes
+{stack_to_close $ends< +[-<+] @stack_mark }
+{stack_from_close >+[->+]@ends}
+{stack_to_start $stack_top[>>] @stack_end }
+
+{stack_open $ends- &stack_to- @stack_end }
+{stack_empty [<<]}
+{stack_to $ends< +[-<+]- @stack_mark}
+{stack_from $stack_top +[->+]-@ends}
+
+;;; goes to open array expects to be in variable area
+{sym_to $sym_crumble [@ends to $sym_crumble]}
+;;; moves from array to variable area
+{sym_from $ends [@sym_crumble to $ends]}
+
+;;; goes to open lisp data element expects to be in variable area
+{lis_to $lis_crumble [@end to $lis_crumble]}
+; moves from lisp data element to variable area
+{lis_from $end [@lis_crumble to $end]}
+
+{substract_left [<<[->]>[<]>-]}
+{substract [>>[-<]<[>]<-]}
+
+;; set stack mark, move pointer to registers
+&init_stack_symbol
+;; set some initial data so we have NIL/T..
+&init_lisp_data

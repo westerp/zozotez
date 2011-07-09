@@ -1,0 +1,163 @@
+Welcome to Zozotez. Zozotez, which means Lisp in French is a Lisp interpreter
+which runs under any BrainFuck environment.
+
+Zozotez is written in the name of science by Pål Wester to proove that it can
+be done in BF and to show off the power EBF provides. Zozotez is not meant to
+be a serious interpreter but it could be used to bootstrap serious work since
+it is easier creatig a BrainFuck interpreter/compiler than to create a LISP
+interpreter. The latest version of Zozotez can be downloaded from
+http://sylwester.no/zozotez/ .
+
+BrainFuck is an Esoteric language/turing tarpit that only has enough
+instructions to become Turing Complete which means that it is possible to
+create any application with it, but not as easy as some other programming
+languages. For more information on Brainfuck see
+http://en.wikipedia.org/wiki/Brainfuck .
+
+The idea of creating Lisp in Brainfuck started in 2007 when talking with a
+collague with my new found fasination and time waster: To create small
+brainfuck programs. Later that day we talked about favorite programming
+language and he's was Lisp. He said that the language is so easy to implement
+that it can be written in BrainFuck. The original LISP was based on research
+done by AI researcher John McCarthy in the late 1950's which produced a paper
+in 1958 describing the language which also included a interpreter written in
+itself using only 9 primitive operators that need to be implemented in some
+underlying machinecode. For a breif article on this see
+http://www.paulgraham.com/rootsoflisp.html which is slightly easier to
+understand than McCarthy's own paper which is more mathematical than
+programmer-oriented.
+
+In short, by implementing special forms quote, cond, label and lambda-functions
+and normal functions atom, eq, cons, car and cdr you have a turing complete
+programming language of a very high level with lots of power. By replacing label
+with set (for assigning values or lambda-expressions (functions) to symbols)
+you have more power than the first LISP and something usefull. By adding
+number support you need add, (additive) inv(erse), and one inequality
+operator of <,<=,> or >=.
+
+Zozotez shall not implement the first LISP, but a close decendant. I have no
+plans to extend it to conform to either Common Lisp or Scheme, but I guess by
+nature it will be closer to Scheme than Common Lisp. It will never be Scheme
+since it has dynamic scoping.
+
+How is it possible to create a programming language that can do recursion in a
+language that only has while loops? That was the question I asked myself some
+years ago and I came to the conclusion that IF you put each 'function' in a
+while loop and what function to run in a stack AND do not allow a program to
+use lower level code than the provided functions there is no limit other that
+memory to how much recursion you may do in BF. Zozotez has been on the drawing
+board since I started EBF and it will use lots of EBF-teqniques and data
+structures.
+
+
+The memory used for Zozotez' program code as well as data are stored in cons
+cells with the follwing format:
+[ type | car | cdr ]
+
+Every element is a BrainFuck-cell wide and thus, with 8 bits you may not use
+more than 256 cell memory since car and cdr sometimes must store an absolute
+address to an object.
+
+Core datatypes (and their numeric-type-id in type-field on a cons)
+0	An memory location not in use
+1	Number (remember, first LISP didn't have numbers)
+2	Symbol
+3	List element (cons)
+
+Number (1) : A number cell has the number stored in car. eg 240 looks like
+this: [ 1 | 240 | 0 ]. In the future I plan to make use of cdr to make a
+chain and implement bignum and negative numbers as well, but right now we
+need to implement other features first.
+
+Symbol: A symbol is stored as a hash in the cell using a hashing algoritm
+that makes every symbol a number between 0 and 250. the symbol test has the
+hash value 4. There is chance of collisions and they will not be handeled in
+the initial version. A symbol test looks like this: [ 2 | 4 | 0 ]
+
+Symbols will have a array outside lisp data (loookup table) where there are
+3 pointers per symbol (ref, string_ref and param_list_ref). ref is what the
+symbol evaluates to, string_ref is a pointer to a textual representation of
+the symbols (stored as a chain of numbers, since print won't care).
+param_list_ref is a pointer to a list of previous values of a current hash
+if a function call masks a global variable.
+
+The very first part of memory address contains two symbols: 0=nil, 1=true
+These are registered to evaluate to themselves.
+
+List element: This is the only time which cdr might get used. A list ( nil t )
+looks like this: [ 3 | 0 | x ] -> (x)[ 3 | 1 | 0 ] (x is the address)
+A pair is a list element that has a symbol or number as its cdr. ( t . t )
+looks like this: [ 3 | 1 | 1 ]
+
+Special form:
+(quote x) ; will evaluate to x without x being evaluated. read will use the
+abbriviation ' as well so 'x is the same as (quote x).
+
+(if predicate then-expression [else-expression]) ; will evaluate predicate
+and the evaluate then-expression if true or else-expression if it exists and
+predicate evaluates to nil.
+
+(lambda (sign1 sign2) body [body*]) ; evaluates to itself as if it were
+quoted. It might be evaluated (changed) so that the body contains more
+efficient code in the future.
+
+Functions: (expr* gets evalueated before function is run)
+(set expr1 expr2) ; if expr evaluates to a symbol (set 'a 'b) assosiates it
+		  ; with the result of the second expression.
+
+(atom expr)       ; returns true if expr is of type number or symbol and
+		  ; the empty list ()
+
+
+(eq expr1 expr2)  ; returns true if type and car is the same
+
+(car expr)	  ; returns the car of the list expr (car '(a b)) => a
+
+(cdr expr)	  ; returns all but the first element of the list expr
+		  ; (cdr '(a b) ) => (b)
+
+(cons expr expr2) ; returns a new list element . (cons 'a '(b)) => (a b)
+
+(< expr1 expr2)	  ; returns true if expr1 is numericly lower than expr2.
+(+ expr1 expr2)   ; returns a new number with car set to the sum
+(~ expr1)         ; returns a new number with car set to the negative.
+
+
+(print expr [lines]); prints the result of expr. If lines is anything (even
+nil) it prints sybols without initial () and if the two first elements both have
+lists as subtypes it will print each list without initial ()
+eg. (print '(This is a line) true) prints out "This is a line\" while
+(print '(((something) is in paranthesis)(but (that) does not worry me)) true)
+results ni:
+(something) is in paranthesis
+but (that) does not worry me
+
+(read)	; reads a LISP expression with a twist. It will not care about
+misplaced ( or )s. eg ))) in the beginning of an expression will be ignored.
+also it will read until balanced and not empty. If you write several atoms
+on noe line and hit enter without any lists it will enclose it in a list.
+Eg:
+(something) is in paranthesis   => ((something) is in paranthesis)
+(something)			=> (something)
+something			=> something
+
+The reason for this is to use read as a read-line as well as expression
+parser for read-eval-print-driver.
+
+
+The whole picture:
+You make new functions with set, like this:
+
+(set' caar (lambda (x) (car(car x))))
+
+then (caar '((b))) will expand to:
+((lambda (x) (car(car x))) ((b)))
+
+x will be bounded to ((b)) and
+the function will return b (its address)
+
+
+
+
+
+

@@ -1,0 +1,259 @@
+;;;; $Id: macro-read.ebf 51 2011-07-09 00:17:15Z westerp $
+;;;;
+;;;; @encoding UTF-8
+;;;; @package Zozotez http://sylwester.no/zozotez/
+;;;; @author Pål Wester <pal.wester.bf@sylwester.no>
+;;;;
+;;;; Zozotez is free software: you can redistribute it and/or modify
+;;;; it under the terms of the GNU General Public License as published by
+;;;; the Free Software Foundation, either version 3 of the License, or
+;;;; (at your option) any later version.
+;;;;
+;;;; Zozotez is distributed in the hope that it will be useful,
+;;;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;;;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;;;; GNU General Public License for more details.
+;;;;
+;;;; You should have received a copy of the GNU General Public License
+;;;;
+;;;; Lazy read implementation
+;;;; this is a test\n => (this is a test)
+;;;; T\n => T
+;;;; ()\n => NIL
+;;;; (a b c) => (a b c)
+;;;; (a b c) d => ((a b c) d)
+;;;; (quote a) => 'a
+;;;; Known weaknesses: no dotted pair (use cons), no quote-char (use quote)
+
+;;; Expect this macro to be run from ax giving us ^0-^5 + ^6 as zero.
+{zozot_read
+  ^1new_addr = &lis_open_new_addr ; open a fresh cell
+  &lis_set_type_list              ; set it to list type
+  ^1new_addr  &pc_push            ; push it on the program stack. we now have [result][where to set result][rest of execution stack....]
+
+  %0atom        ; how to distinct between number / symbol? (number we read in in one go)
+  %1not_empty   ; indicates if this is the very first element of a list (in any level)
+  %5copy_action ; used to determine what to do next
+  ^1in &read
+  ^1in(- ^5copy+ ^3in+)
+  ^4tmp+ set flag
+  while ^3in is not null
+  (
+    ; switch ( ^3in ) cases '\10\9 0()'' using ^4tmp,
+    ^3in---------; \9
+    (^3in-; \10
+      (^4tmp++++(-^3in----)+^3in--; \32
+;        (^3in--------; (
+         (^3in-------; '
+           (^3in-; (
+             (^3in-; )
+               (^3in------------------; semicolon
+                  (
+                    (-) ^4tmp-  clear stuff
+                    first we store the char
+                    if cell ^1not_empty ; this only happens on the first as well, but not always on first
+                    (-
+                          ^3new_addr = &lis_get_addr_new
+                          ^3new_addr &lis_set_cdr
+                          &lis_open_new_next ; last allocated cell is always a lower address :)
+                          &lis_set_type_list
+                    )
+                    %1first_char+ this will be a first char flag
+                    if ^0atom is set ; which means we are on 2. or after char
+                    (- reduce by 1
+                       ^1first_char- = &lis_get_addr_new
+                       ^1first_char &lis_set_cdr
+                       &lis_open_new_next
+                       ^0atom(-^4hash+)
+                    )
+                    else if ^1first_char set
+                    (-
+                        %1new_addr = &lis_get_addr_new
+                        ^1new_addr &lis_set_car
+                        ^0old_addr &lis_get_addr
+                        ^0old_addr &stack_push
+                        &lis_open_new_next
+                    )
+                    &lis_set_type_number
+
+                    At this point we only use %4hash and %5new_char
+                    ^4hash(- ^3mcon+++++++++++(-  ^1zero+^0hash[-^1zero-]*-1 ^1zero[+++++(-^2++++++(-^0new_hash+++++++))^0new_hash--^2end] ))
+                    ^5inp(- &lis_to $car + &lis_from ^1zero+^0hash[-^1zero-]*-1 ^1zero[+++++(-^2++++++(-^0new_hash+++++++))^0new_hash--^2end])
+                    ^5new_input+
+                    ^0atom+ increase hash with 1 to indicate atom ; 0-250 => 1-251
+                )
+                 ^4tmp ( match comment ^5input(-) ^4tmpin  ((-)&read_cr) ^2action++ ) ; read until cr and act as we have cr
+              ) ^4tmp (- match 'cl'^2action++++ )  ; 4 == space / close
+            ) ^4tmp (- match 'op'  ^2action+++  )  ; 3 == space / open
+          ) ^4tmp (- match '''     ^2action+++++)  ; 5 == space / quote
+        ) ^4tmp (- match '\32'     ^2action+    )  ; 1 == space
+      ) ^4tmp (- match '\10'       ^2action++   )  ; 2 == space / linefeed
+    ) ^4tmp (- match '\9'          ^2action+    )  ; 1 == space
+    ^2action(
+        ^5input(-) ; already know from ation what we are dealing with :)
+        if we have ^0atom
+        (
+            &lis_close
+            ^3reference = &stack_pop
+            ^0symhash(-^4+^5+)
+            ^4symhash- &sym_open
+            ^3reference(-(-^0+^4+)
+            ^4reference &lis_open)
+            ^1string_ref = &sym_get_string_ref
+            ^4ref_not_set+
+            if ^1string_ref is set
+            ( (-)
+                ; free all cells that constitues the string
+                ^1cdr = &lis_get_car
+                ^4current- &lis_close_addr
+                 while ^1cdr
+                 (
+                    ^1cdr &lis_open
+                    ^1cdr = &lis_get_cdr
+                    &lis_zero_all
+                    &lis_close
+                 )
+                 ^4current &lis_open
+            )
+            if ^4ref_not_set
+            (-
+               %4string = &lis_get_car
+               ^4string &sym_set_string_ref
+            )
+            &sym_close
+            ^3new_addr = &lis_get_addr_new
+            ;; here we have car actually set to string_ref so we need to clear it first
+            &lis_zero_car
+            ^3new_addr = &lis_set_car
+            &lis_open_new_next
+            &lis_set_type_symbol
+            ^5atom- &lis_set_car
+            &lis_close
+            ^1quote+
+            ^0current &lis_open
+            ^0current = &lis_get_type
+            if ^0type---- not quote ( (-) ^1quote-)
+            if ^1quote
+            (
+               &lis_to $type - $end[- @lis_crumble to $end] ; restore from quote to list while closing
+               ^0current- = &stack_pop
+               ^0current &lis_open
+               ^0current = &lis_get_type
+               if ^0type---- not quote ( (-) ^1quote-) ; check for nested quotes
+            )
+            ^1not_empty+       indicate not empty list
+
+        )
+        ^5new_input+ ;; assume new input always
+        ^3else+
+        ^2action switch --
+        (-(-(-((-) ^3else-)
+            ^3else ( quote ; 'a => (quote a), '(a) => (quote (a))
+                      if cell ^1not_empty ; this only happens on the first as well, but not always on first
+                      (-
+                            ^1new_addr = &lis_get_addr_new
+                            ^1new_addr(-^2stack_copy+^3cdr_copy+)
+                            ^3new_addr- &lis_set_cdr ; - 1 because we didnt remove the else flag
+                            &lis_open_new_next ; last allocated cell is always a lower address :)
+                            &lis_set_type_list
+                      )
+                      if ^3empty cons
+                      (-
+                            ^2stack_copy = &lis_get_addr
+                      )
+
+                      ^2stack_copy &stack_push
+                      ^1new_addr = &lis_get_addr_new
+                      ^1new_addr &lis_set_car
+                      &lis_open_new_next
+                      &lis_set_type_list
+                      ;; TODO set car to a known quote-location. currently T
+                      ^1quote+++ &lis_set_car
+                      ^1new_addr =  &lis_get_addr_new
+                      ^1new_addr &lis_set_cdr
+                      &lis_open_new_next
+                      &lis_set_type_quote
+                    ))
+            ^3else (- close
+                      check empty which means null
+                      close and check for quote type for ' quote ; (atually (quote x) is parsed correcly while 'x and '(list) requires special attention
+                      %3stack = &stack_pop
+                      if ^3stack not empty
+                      (-
+                          #^2empty+
+                          if ^1not_empty ((-) ^2empty- )
+                          else if ^2empty
+                          (-
+                              &lis_zero_type ^4set_car_null+ ; free this cell and set a flag to set car to nil
+                          )
+                          &lis_close
+                          ^3stack &lis_open
+                          if ^4set_car_null
+                          (-
+                              &lis_zero_car
+                          )
+
+                          ^2quote+
+                          ^1type = &lis_get_type
+                          if ^1type---- not quote ( (-) ^2quote-)
+                          if ^2quote
+                          (
+                            &lis_to $type - $end[- @lis_crumble to $end] ; restore from quote to list while closing
+                            ^1current- = &stack_pop
+                            ^1current &lis_open
+                            ^1current = &lis_get_type
+                            if ^1type---- not quote ( (-) ^2quote-) ; check for nested quotes
+                          )
+                          ^1not_empty+ no matter what cons now is not empty
+                      )
+                   ))
+            ^3else (  open
+                      if cell ^1not_empty ; this only happens on the first as well, but not always on first
+                      (-
+                            #^1new_addr = &lis_get_addr_new
+                            ^1new_addr(-^2stack_copy+^3cdr_copy+)
+                            ^3new_addr- &lis_set_cdr ; - 1 because we didnt remove the else flag
+                            &lis_open_new_next ; last allocated cell is always a lower address :)
+                            &lis_set_type_list
+                      )
+                      if ^3empty cons
+                      (-
+                            ^2stack_copy = &lis_get_addr
+                      )
+                      ^2stack_copy &stack_push
+                      ^1new_addr = &lis_get_addr_new
+                      ^1new_addr &lis_set_car
+                      &lis_open_new_next
+                      &lis_set_type_list
+                      ))
+            ^3else ( linefeed NB reusing flag
+                      ^2stack = &stack_is_nonempty
+                      if ^2stack is not empty (- ^3else- )
+                      ^3else then we are finished reading if we have cons at all
+                      (-
+                            if ^1not_empty
+                            (-
+                                &lis_close
+                                ^1ref = &pc_pop
+                                ^1ref(-(- ^2ret+^3lis+))
+                                ^3ref &lis_open
+                                ^4ref = &lis_get_cdr ; need to check cdr. if nil then result is in car.
+                                if ^4ref is not null ((-) ^5else- )
+                                ^5else
+                                (-
+                                  ^2ret(-) = &lis_get_car
+                                  &lis_zero_all
+                                )
+                                &lis_close
+                                ^5return = &pc_pop
+                                ^5return(- &lis_open )
+                                ^2ret &lis_set_car
+                                &lis_close
+                            )))
+
+    )
+    ^5new_input(- ^4tmp &read )  If we want to read more we do it in %5new_input
+    ^4tmp(- ^5copy+ ^3inp+)+ make double copy of input and set else flag for main switch
+  )
+  ^4-
+}
