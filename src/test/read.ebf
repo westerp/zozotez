@@ -1,0 +1,40 @@
+;;;; $Id: read.ebf 51 2011-07-09 00:17:15Z westerp $
+;;;;
+;;;; @encoding UTF-8
+;;;; @package Zozotez http://sylwester.no/zozotez/
+;;;; @author Pål Wester <pal.wester.bf@sylwester.no>
+;;;;
+;;;; Zozotez is free software: you can redistribute it and/or modify
+;;;; it under the terms of the GNU General Public License as published by
+;;;; the Free Software Foundation, either version 3 of the License, or
+;;;; (at your option) any later version.
+;;;;
+;;;; Zozotez is distributed in the hope that it will be useful,
+;;;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;;;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;;;; GNU General Public License for more details.
+;;;;
+;;;; You should have received a copy of the GNU General Public License
+;;;;
+;;;; To just build and test read functionality
+;;;; cat version.ebf macro-read.ebf zozotez-base.ebf test/read.ebf |
+;;;;    ebf | tee zozotez-read.bf
+
+;;; TODO: This only runs zozot_read. It actually never test anything
+
+;; divmod performs divide and modulus at the same time
+;; needs 3 additional cleared cells to work
+;; @argument ^0 divident
+;; @argument ^1 divisor
+;; @return ^1   divisor-modulus
+;; @return ^2   modulus in  ^2
+;; @return ^3   quotient in ^3
+{divmod
+    [->-[>+>>]>[+[-<+>]>+>>]<<<<<]*-3
+}
+
+$ax &lis_open_new_addr
+&lis_set_type_list
+&lis_close
+$ax &pc_push
+$ax &zozot_read
