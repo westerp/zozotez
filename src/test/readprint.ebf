@@ -1,0 +1,52 @@
+;;;; $Id: readprint.ebf 44 2011-07-04 23:33:08Z westerp $
+;;;;
+;;;; @encoding UTF-8
+;;;; @package Zozotez http://sylwester.no/zozotez/
+;;;; @author Pål Wester <pal.wester.bf@sylwester.no>
+;;;;
+;;;; Zozotez is free software: you can redistribute it and/or modify
+;;;; it under the terms of the GNU General Public License as published by
+;;;; the Free Software Foundation, either version 3 of the License, or
+;;;; (at your option) any later version.
+;;;;
+;;;; Zozotez is distributed in the hope that it will be useful,
+;;;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;;;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;;;; GNU General Public License for more details.
+;;;;
+;;;; You should have received a copy of the GNU General Public License
+;;;;
+;;;; print implementation (print what [specials])
+;;;; Some characters are unavailable and therefore have some symbols
+;;;; These will be translated to their respective char with specials
+;;;; set to ANYTHING. To not use specials don't supply the extra parameter
+;;;;
+;;;; main flow of program / eval implementation
+;;;; This early stage it will be a (loop (print(read)))
+$ax|"Zozotez read-print-loop (no eval) Type NIL/() to exit
+"
+  we dont have eval so we do read print loop
+  $ax(-)+
+(-
+  |"Zozotez-moi~>"(-)
+  $ax &lis_open_new_addr
+  &lis_set_type_list
+  &lis_close
+  $ax(-$bx+$cx+)
+  $bx &pc_push
+  $cx &pc_push
+  $ax &zozot_read
+  $ax &pc_pop
+  $ax-&lis_open
+  $bx = &lis_get_car
+  &lis_close
+  $cx+
+  if $bx is not null
+  [
+    $ax+ $cx-           ; set ax so that we read another time
+  ]@bx
+  $cx[-$dx]             ; correct pointer
+  $ax &zozot_print      ; print anyway
+)
+  |"Au revoir
+"

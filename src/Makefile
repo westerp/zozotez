@@ -15,41 +15,51 @@
 #
 # You should have received a copy of the GNU General Public License
 
-EBF_BIN = ebf
-EBF_ERROR = ebf_error.pl
-TEST_BINS   = zozotez-read.bf zozotez-print.bf
+EBF_BIN = ../tools/ebf
+EBF_ERROR = ../tools/ebf_error.pl
+APPLY_CODE = ../tools/apply_code.pl ascii-zozotez.txt
+TEST_BINS   = test-read.bf test-print.bf test-readprint.bf
 TEST_FILES  = test/read.ebf
 MACRO_FILES = macro-read.ebf macro-print.ebf macro-main.ebf
-HEAD = version.ebf
+VERSION = version.bf
 BASE = zozotez-base.ebf
 TAIL = tail.ebf
 
 test: $(TEST_BINS)
-all: zozotez.bf
+all: test-zozotez.bf
 
 .SUFFIXES:
 .SUFFIXES: .bf .ebf
 
-zozotez.ebf: $(HEAD) $(MACRO_FILES) $(BASE) $(TAIL)
-	cat $(HEAD) $(MACRO_FILES) $(BASE) $(TAIL) > zozotez.ebf
+test-zozotez.ebf: $(VERSION) $(MACRO_FILES) $(BASE) $(TAIL)
+	cat $(MACRO_FILES) $(BASE) $(TAIL) > test-zozotez.ebf
 
-zozotez-read.ebf:  $(HEAD) macro-read.ebf $(BASE) test/read.ebf
-	cat $(HEAD) macro-read.ebf $(BASE) test/read.ebf > zozotez-read.ebf
+test-read.ebf:  macro-read.ebf $(BASE) test/read.ebf
+	cat  macro-read.ebf $(BASE) test/read.ebf > test-read.ebf
 
-zozotez-print.ebf: $(HEAD) macro-print.ebf $(BASE) test/print.ebf
-	cat $(HEAD) macro-print.ebf $(BASE) test/print.ebf > zozotez-print.ebf
+test-print.ebf: macro-print.ebf $(BASE) test/print.ebf
+	cat macro-print.ebf $(BASE) test/print.ebf > test-print.ebf
+
+test-readprint.ebf: macro-read.ebf macro-print.ebf $(BASE) test/readprint.ebf
+	cat macro-read.ebf macro-print.ebf $(BASE) test/readprint.ebf > test-readprint.ebf
+
+
+version.bf: version.ebf
+	cat version.ebf | $(EBF_BIN) | sed 's/\$$//g' > version.tmp && \
+	${EBF_ERROR} version.tmp && \
+	mv version.tmp version.bf
 
 .ebf.bf : info
-	cat $< | $(EBF_BIN) | tee  $*.tmp  && \
+	cat $< | $(EBF_BIN) | tee  $*.tmp  | $(APPLY_CODE) && \
 	${EBF_ERROR} $*.tmp && \
 	mv $*.tmp $*.bf
 
 clean:
-	rm -rf zozotez-read.ebf zozotez.ebf *.bf *~
+	rm -f test-*.ebf *.bf *~
 
 info:
-	@echo In order to compile this package you need a ebf binary or change EBF_BIN to a combination of
-	@echo the ebf.bf and a intrepreter to run it.
-	@echo Go to http://sylwester.no/ebf/ to get the package and run make install it makeing fails
+	@echo In order to compile this package under windowns you need a ebf-bf and a bf-compiler/interpreter
+	@echo and change EBF_BIN to a combination of the ebf.bf and a intrepreter to run it.
+	@echo Go to http://sylwester.no/ebf/ to get it.
 
 .PHONY: clean info
