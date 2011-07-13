@@ -15,8 +15,21 @@
 #
 # You should have received a copy of the GNU General Public License
 
-all: src
-	cd src && \
-	make zozotez.bf
+all: zozotez.bf
 
+test:
+	@make -C src all
 
+zozotez.bf: 	src/test-zozotez.bf src/version.bf src/ascii-zozotez.txt
+	cat src/test-zozotez.bf | tools/apply_code.pl src/ascii-zozotez.txt > zozotez.tmp &&\
+	cat zozotez.tmp | sed "s~COMPILERINFO~`cat src/version.bf`~g" > zozotez.bf &&\
+	rm -f zozotez.tmp
+
+src/test-zozotez.bf:  src
+	@make -C src test-zozotez.bf
+
+clean:
+	rm zozotez.bf
+	echo "NB: this will not clean the src directory"
+
+.PHONEY: clean test

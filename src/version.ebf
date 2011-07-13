@@ -1,4 +1,4 @@
-;;;; $Id$
+?;;;; $Id$
 ;;;;
 ;;;; @encoding UTF-8
 ;;;; @package Zozotez http://sylwester.no/zozotez/
@@ -16,10 +16,5 @@
 ;;;;
 ;;;; You should have received a copy of the GNU General Public License
 ;;;;
-;;;; This file will only produce a comment and should be the very first
-;;;; included.
-
-[
-  Zozotez RELEASE
-  Compiled with ?
-]
+;;;; This file will only produce the version info from ebf
+;;;; NB: Unlike any other file the source is the first char of this file

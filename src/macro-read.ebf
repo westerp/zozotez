@@ -77,7 +77,7 @@
                     &lis_set_type_number
 
                     At this point we only use %4hash and %5new_char
-                    ^4hash(- ^3mcon+++++++++++(-  ^1zero+^0hash[-^1zero-]*-1 ^1zero[+++++(-^2++++++(-^0new_hash+++++++))^0new_hash--^2end] ))
+                    ^4hash(- ^3mcon+++++++++(-  ^1zero+^0hash[-^1zero-]*-1 ^1zero[+++++(-^2++++++(-^0new_hash+++++++))^0new_hash--^2end] ))
                     ^5inp(- &lis_to $car + &lis_from ^1zero+^0hash[-^1zero-]*-1 ^1zero[+++++(-^2++++++(-^0new_hash+++++++))^0new_hash--^2end])
                     ^5new_input+
                     ^0atom+ increase hash with 1 to indicate atom ; 0-250 => 1-251
@@ -121,13 +121,23 @@
                ^4string &sym_set_string_ref
             )
             &sym_close
-            ^3new_addr = &lis_get_addr_new
             ;; here we have car actually set to string_ref so we need to clear it first
+            ;; if null we are done :]
             &lis_zero_car
-            ^3new_addr = &lis_set_car
-            &lis_open_new_next
-            &lis_set_type_symbol
-            ^5atom- &lis_set_car
+
+            ; if %5atom is 36 (aka NIL) we don't need this
+            ^5atom-(-^6nilcheck+^4atom+)
+            %5six++++++(-^6nilcheck------)
+            if ^6not_nil
+            ((-)
+             ^3new_addr = &lis_get_addr_new
+             ^3new_addr = &lis_set_car
+              &lis_open_new_next
+              &lis_set_type_symbol
+              ^4atom &lis_set_car
+            )
+            ^4atom(-) ; no need to set car
+
             &lis_close
             ^1quote+
             ^0current &lis_open
@@ -167,8 +177,8 @@
                       ^1new_addr &lis_set_car
                       &lis_open_new_next
                       &lis_set_type_list
-                      ;; TODO set car to a known quote-location. currently T
-                      ^1quote+++ &lis_set_car
+                      ;; TODO set car to a known quote-location.
+                      ^1quote++ &lis_set_car
                       ^1new_addr =  &lis_get_addr_new
                       ^1new_addr &lis_set_cdr
                       &lis_open_new_next
@@ -180,7 +190,7 @@
                       %3stack = &stack_pop
                       if ^3stack not empty
                       (-
-                          #^2empty+
+                          ^2empty+
                           if ^1not_empty ((-) ^2empty- )
                           else if ^2empty
                           (-
@@ -210,7 +220,7 @@
             ^3else (  open
                       if cell ^1not_empty ; this only happens on the first as well, but not always on first
                       (-
-                            #^1new_addr = &lis_get_addr_new
+                            ^1new_addr = &lis_get_addr_new
                             ^1new_addr(-^2stack_copy+^3cdr_copy+)
                             ^3new_addr- &lis_set_cdr ; - 1 because we didnt remove the else flag
                             &lis_open_new_next ; last allocated cell is always a lower address :)

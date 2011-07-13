@@ -20,8 +20,6 @@
 ;;;; cat version.ebf macro-read.ebf zozotez-base.ebf test/read.ebf |
 ;;;;    ebf | tee zozotez-read.bf
 
-;;; TODO: This only runs zozot_print. It actually never test anything
-;; this prints out NIL T ERR NUM (in this order)
 $ax = &lis_open_new_addr
 $ax &pc_push
 &lis_set_type_list
@@ -39,8 +37,8 @@ $ax &lis_set_car
 $ax+++ &pc_push
 $ax++ &pc_push
 $ax+ &pc_push
-
-$bx- &pc_pop
+$ax|"Printing: NIL, T, quote, STRING-REF-UNSET, ((NIL) (NIL))
+"(-)
 $bx+(-
   $ax &zozot_print
   $bx &pc_pop

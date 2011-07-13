@@ -21,4 +21,3 @@
 ;;;; cat version.ebf macro-*.ebf zozotez-base.ebf tail.ebf | ebf | tee zozotez.bf
 
 &main
-#+

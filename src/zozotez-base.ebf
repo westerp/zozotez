@@ -17,7 +17,7 @@
 ;;;; You should have received a copy of the GNU General Public License
 ;;;;
 ;;;; This file implements the low lever data structures and macroes that
-;;;; initialize data.
+;;;; initialize data. It is bread and butter for the lisp functions.
 ;;;;
 
 ;;; This is for my debugger, bf1.pl,  to give memory locations labels
@@ -79,72 +79,143 @@ LISP data
 ;;; this will initialize the
 ;;; internal functions and texts
 {init_lisp_data
-  $type &NIL
+
+  ;0 NIL is a symbol in memory
+  $type &Z_NIL
   $type &TYPE_SYM
 
+  ;1 T is the symbol T
   $lis_crumble+@end
-  $type &T
+  $type &ZX_T
   $type &TYPE_SYM
 
+  ;;Special forms
+  ;2 quote
   $lis_crumble+@end
-  $type &ERR
+  $type &Z_quote
   $type &TYPE_SYM
 
+  ;3 if
   $lis_crumble+@end
-  $type &QUO
+  $type &Z_if
   $type &TYPE_SYM
 
+  ;4 macro
+  $lis_crumble+@end
+  $type &Z_macro
+  $type &TYPE_SYM
+
+  ;5 lambda
+  $lis_crumble+@end
+  $type &Z_lambda
+  $type &TYPE_SYM
+
+  ;; normal order functions
+  ;6 progn
+  $lis_crumble+@end
+  $type &Z_progn
+  $type &TYPE_SYM
+
+  ;7 set
+  $lis_crumble+@end
+  $type &ZX_set
+  $type &TYPE_SYM
+
+  ;8 eq
+  $lis_crumble+@end
+  $type &Z_eq
+  $type &TYPE_SYM
+
+  ;9 atom
+  $lis_crumble+@end
+  $type &Z_atom
+  $type &TYPE_SYM
+
+  ;10 placeholder for <
+  $lis_crumble+@end
+  $type &Z_lt
+  $type &TYPE_SYM
+
+  ;11 car (car '((a) b)) => (a), (car '((a) b) 1) => a
+  $lis_crumble+@end
+  $type &ZX_car
+  $type &TYPE_SYM
+
+  ;12 cdr (cdr '(a b c)) => (b c), (cdr '(a b c) 1) => (c)
+  $lis_crumble+@end
+  $type &ZX_cdr
+  $type &TYPE_SYM
+
+  ;13 cons (cons a b) => (a . b)
+  $lis_crumble+@end
+  $type &Z_cons
+  $type &TYPE_SYM
+
+  ;14 placeholder for + (+ a n [T])
+  $lis_crumble+@end
+  $type &Z_plus
+  $type &TYPE_SYM
+
+  ;15 placeholder for - (- a n [T])
+  $lis_crumble+@end
+  $type &Z_minus
+  $type &TYPE_SYM
+
+  ;16 placeholder for read
+  $lis_crumble+@end
+  $type &ZX_read
+  $type &TYPE_SYM
+
+  ;17 placeholder for print
+  $lis_crumble+@end
+  $type &ZZX_print
+  $type &TYPE_SYM
+
+  ;18 placeholder for eval
+  $lis_crumble+@end
+  $type &ZX_eval
+  $type &TYPE_SYM
+
+  ;19 string of T (1)
   $lis_crumble+@end
   $type &TYPE_NUM
   $car ~"T"
 
+  ; 20-22 string of quote (2)
   $lis_crumble+@end
   $type &TYPE_NUM
   $car ~"N"
-  $cdr 6+
+  $cdr 21+
 
   $lis_crumble+@end
   $type &TYPE_NUM
   $car ~"I"
-  $cdr 7+
+  $cdr 22+
 
   $lis_crumble+@end
   $type &TYPE_NUM
   $car ~"L"
 
-  $lis_crumble+@end
-  $type &TYPE_NUM
-  $car ~"E"
-  $cdr 9+
-
-  $lis_crumble+@end
-  $type &TYPE_NUM
-  $car ~"R"
-  $cdr 10+
-
-  $lis_crumble+@end
-  $type &TYPE_NUM
-  $car ~"R"
-
+  ; 23-27 string of quote (2)
   $lis_crumble+@end
   $type &TYPE_NUM
   $car ~"q"
-  $cdr 12+
+  $cdr 24+
 
   $lis_crumble+@end
   $type &TYPE_NUM
   $car ~"u"
-  $cdr 13+
+  $cdr 25+
 
   $lis_crumble+@end
   $type &TYPE_NUM
   $car ~"o"
-  $cdr 14+
+  $cdr 26+
 
   $lis_crumble+@end
   $type &TYPE_NUM
   $car ~"t"
-  $cdr 15+
+  $cdr 27+
 
   $lis_crumble+@end
   $type &TYPE_NUM
@@ -153,28 +224,119 @@ LISP data
   &lis_from
   &lis_close
 
-  $ends &NIL
+  $ends &Z_NIL
   $ax &sym_open
   $ax &sym_zset_assoc_ref
-  $ax 5+ &sym_set_string_ref
+  $ax 20+ &sym_set_string_ref
   &sym_close
 
-  $ends &T
+  $ends &ZX_T
   $ax &sym_open
   $ax+ &sym_zset_assoc_ref
-  $ax 4+ &sym_set_string_ref
+  $ax 19+ &sym_set_string_ref
   &sym_close
 
-  $ends &ERR
+  $ends &Z_quote
   $ax &sym_open
   $ax++ &sym_zset_assoc_ref
-  $ax 9+ &sym_set_string_ref
+  $ax 23+ &sym_set_string_ref
   &sym_close
 
-  $ends &QUO
+  ;3 if
+  $ends &Z_if
   $ax &sym_open
   $ax+++ &sym_zset_assoc_ref
-  $ax 11+ &sym_set_string_ref
+  &sym_close
+
+  ;4 macro
+  $ends &Z_macro
+  $ax &sym_open
+  $ax++++ &sym_zset_assoc_ref
+  &sym_close
+
+  ;5 lambda
+  $ends &Z_lambda
+  $ax &sym_open
+  $ax 5+ &sym_zset_assoc_ref
+  &sym_close
+
+  ;; normal order functions
+  ;6 progn
+  $ends &Z_progn
+  $ax &sym_open
+  $ax 6+ &sym_zset_assoc_ref
+  &sym_close
+
+  ;7 set
+  $ends &ZX_set
+  $ax &sym_open
+  $ax 7+ &sym_zset_assoc_ref
+  &sym_close
+
+  ;8 eq
+  $ends &Z_eq
+  $ax &sym_open
+  $ax 8+ &sym_zset_assoc_ref
+  &sym_close
+
+  ;9 atom
+  $ends &Z_atom
+  $ax &sym_open
+  $ax 9+ &sym_zset_assoc_ref
+  &sym_close
+
+  ;10 placeholder for <
+  $ends &Z_lt
+  $ax &sym_open
+  $ax 10+ &sym_zset_assoc_ref
+  &sym_close
+
+  ;11 car (car '((a) b)) => (a), (car '((a) b) 1) => a
+  $ends &ZX_car
+  $ax &sym_open
+  $ax 11+ &sym_zset_assoc_ref
+  &sym_close
+
+  ;12 cdr (cdr '(a b c)) => (b c), (cdr '(a b c) 1) => (c)
+  $ends &ZX_cdr
+  $ax &sym_open
+  $ax 12+ &sym_zset_assoc_ref
+  &sym_close
+
+  ;13 cons (cons a b) => (a . b)
+  $ends &Z_cons
+  $ax &sym_open
+  $ax 13+ &sym_zset_assoc_ref
+  &sym_close
+
+  ;14 placeholder for + (+ a n [T])
+  $ends &Z_plus
+  $ax &sym_open
+  $ax 14+ &sym_zset_assoc_ref
+  &sym_close
+
+  ;15 placeholder for - (- a n [T])
+  $ends &Z_minus
+  $ax &sym_open
+  $ax 15+ &sym_zset_assoc_ref
+  &sym_close
+
+  ;16 placeholder for read
+  $ends &ZX_read
+  $ax &sym_open
+  $ax 16+ &sym_zset_assoc_ref
+  &sym_close
+
+  ;17 placeholder for print
+  $ends &ZZX_print
+  $ax &sym_open
+  $ax 17+ &sym_zset_assoc_ref
+  &sym_close
+
+  ;18 placeholder for eval
+  $ends &ZX_eval
+  $ax &sym_open
+  $ax 18+ &sym_zset_assoc_ref
   &sym_close
 
 }
@@ -321,50 +483,94 @@ LISP data
 }
 ;; some known symbol hashes
 ;; case sensetive NIL/T are upper, rest is lower
-;; quote is never a symbol since it's special '
-;; uses the cell before in order to make it
-{NIL      36   6+(-> 6+)>+  }
-{T       167  13+(->13+)>-- }
-{ERR OR  146  12+(->12+)>++ }
-{QUO     249  16+(->16+)>-------}
-; {COND    66   8+(-> 8+)>++ }
-; {EQ      44   7+(-> 6+)>++ }
-; {ATOM   211  15+(->14+)>+  }
-; {CONS    51   7+(-> 7+)>++ }
-; {CAR     20   4+(-> 5+)    }
-; {CDR     47   7+(-> 7+)--  }
-; {RD     148 }
-; {EVAL    79 }
-; {PRINT   21 }
-; {LAMBDA  42 }
-; {QUOTE  250 }
-; {READL  145 }
-; {REP    135 }
+{Z_NIL         36       6+(-> 6+)>   }
+{ZX_T          167     13+(->13+)>2- }
+{Z_quote       249     16+(->16+)>7- }
+{Z_if          90       9+(->10+)>   }
+{Z_macro       56       7+(-> 8+)>   }
+{Z_lambda      41       6+(-> 7+)>-  }
+{Z_progn       230     15+(->15+)>5+ }
+{ZX_set        12       3+(-> 4+)>   }
+{Z_eq          43       7+(-> 6+)>+  }
+{Z_atom        210     14+(->15+)>   }
+{Z_lt          191     14+(->14+)>5- }
+{ZX_car        19       4+(-> 5+)>-  }
+{ZX_cdr        46       7+(-> 7+)>3- }
+{Z_cons        50       7+(-> 7+)>+  }
+{Z_plus        208     14+(->15+)>2- }
+{Z_minus       206     14+(->15+)>4- }
+{ZX_read       147     12+(->12+)>3+ }
+{ZX_eval       78       9+(->9+ )>3- }
+{ZZX_print     20       4+(->5+ )>   }
+
 
 ;; Lisp data types
-;; A list element will have the car-type added
-;; so a list with a symbol , eg. (a) the list will be &TYPE_LIS+&TYPE_SYM
-;; not sure what to do with dotted pair, but I'd like to support it
-;; the idea is that functions should be very little type aware eg. (cdr "str") => "tr"
-;; while (car "str") might not do what you want.
 {TYPE_NUL (-)}   ; available cell
-;{TYPE_INT 1+}   ; internal function
 {TYPE_NUM 1+}   ; number (the strings of symbol names are stored as number sequence)
 {TYPE_SYM 2+}   ; symbol (hash in car)
 {TYPE_LIS 3+}   ; list
 {TYPE_LAP 4+}   ; list apply 1, eg. expr (+ a b) the head is LIST when + is evaluated it's AP1, when AP2 all parameters are evaluated
 {TYPE_LA2 5+}   ; list apply 2
-;{TYPE_QCH 4+)   ; a list element after quote character (only used by read). 'something => [ LIS ->] [ QCH
-;{TYPE_LFU 5+}   ; list element function                                                      `-SYM QUOTE `-SYM somthing
-;{TYPE_LMA 6+}   ; list element macro
-;{TYPE_LIS 7+}   ; empty list type
 
 ;; Known locations
 {LOC_NIL  (-)}
 {LOC_T RUE 1+}
-{LOC_E RROR2+}
 
 ;;;USER functions
+
+{lis_print
+  while $type not null
+  (
+    while %type not null
+    (
+      $end+
+      $type-(-((-)
+            $end -|"L"(-))
+            $end(-|"S"(-))
+              $fx+
+            )
+            $end(-|"N,"(-)$car.(-)
+              $cdr+(-$car+)
+              $ex+
+            )
+            $fx(-
+              $car+(-$end+)
+              $cdr+(-$car+)
+            )
+            $ex(-@cx)
+      while $end not zero (
+        $ex|","(-)
+        while $end- not zero (
+            $fx 10+
+            $end &divmod_left
+            $fx(-)
+            $ex(-$end+)$end+
+            $dx(-$fx+)
+            $fx@end
+        )
+        %end+$type[$end-]@type$end[@type $fx]; make sure we write at least a zero
+        $type(-
+          $end 8+(-$type 6+)$type.(-)
+          @end
+        )
+        $car @end
+      )
+      $fx 10+.(-)
+    )
+    $fx|"A,0,0
+"(-)
+    $lis_crumble@end
+  )
+}
+
+;; divmod performs divide and modulus at the same time
+;; needs 3 additional cleared cells to work
+;; @argument ^0 divident
+;; @argument ^1 divisor
+;; @return ^1   divisor-modulus
+;; @return ^2   modulus in  ^2
+;; @return ^3   quotient in ^3
+{divmod_left [-<-[<+<<]<[+[->+<]<+<<]>>>>>]*+3 }
 
 ;; read that makes any-eof convensions to 0
 {read ^1+^0,[+[-^1-]]*-1^1[-^2]}
@@ -903,6 +1109,7 @@ array restore end
 
 {substract_left [<<[->]>[<]>-]}
 {substract [>>[-<]<[>]<-]}
+
 
 ;; set stack mark, move pointer to registers
 &init_stack_symbol
