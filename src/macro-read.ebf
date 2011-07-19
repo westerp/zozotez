@@ -23,9 +23,10 @@
 ;;;; (a b c) => (a b c)
 ;;;; (a b c) d => ((a b c) d)
 ;;;; (quote a) => 'a
-;;;; Known weaknesses: no dotted pair (use cons), no quote-char (use quote)
+;;;; Known weaknesses: no dotted pair (use cons). Does not handle EOF. EOF == NIL
 
 ;;; Expect this macro to be run from ax giving us ^0-^5 + ^6 as zero.
+;;; @return the read expression unevaluated
 {zozot_read
   ^1new_addr = &lis_open_new_addr ; open a fresh cell
   &lis_set_type_list              ; set it to list type
@@ -94,8 +95,10 @@
         if we have ^0atom
         (
             &lis_close
+            ^5 6+(-^4 6+(-^3_250 7+))           ; make 252
+            ^3_250 (-^4+^5+)                    ; and copy it to 4 and 5
             ^3reference = &stack_pop
-            ^0symhash(-^4+^5+)
+            ^0symhash-(-^4-^5-)                 ; instead of copy, reduce (inverse)
             ^4symhash- &sym_open
             ^3reference(-(-^0+^4+)
             ^4reference &lis_open)

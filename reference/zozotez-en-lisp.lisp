@@ -181,7 +181,7 @@
 
 (defun zozotez ()
   (setq *result* '(*NIL*))
-  (setq *stack* (list '(repl) *result*))
+  (setq *stack* (list '(eval(read)) *result*))
   (setq *symbols* (make-hash-table :TEST #'eq))
   (setq *symbols-stack* (make-hash-table :TEST #'eq))
   (regsym '(- + < atom quote eq car cdr cons cond lambda apply set read eval print repl tail-call unbind) 'function)
