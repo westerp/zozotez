@@ -18,6 +18,6 @@
 ;;;;
 ;;;; This file will start the macro-expansions that build
 ;;;; a full Zozotez binary.
-;;;; cat version.ebf macro-*.ebf zozotez-base.ebf tail.ebf | ebf | tee zozotez.bf
+;;;; cat macro-*.ebf zozotez-base.ebf tail.ebf | ebf | tee zozotez.bf
 
 &main

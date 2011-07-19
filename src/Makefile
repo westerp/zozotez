@@ -21,6 +21,7 @@ APPLY_CODE = ../tools/apply_code.pl ascii-zozotez.txt
 TEST_BINS   = test-read.bf test-print.bf test-readprint.bf
 TEST_FILES  = test/read.ebf
 MACRO_FILES = macro-read.ebf macro-print.ebf macro-main.ebf
+#MACRO_FILES = macro-main.ebf
 VERSION = version.bf
 BASE = zozotez-base.ebf
 TAIL = tail.ebf
@@ -31,7 +32,7 @@ all: test-zozotez.bf
 .SUFFIXES:
 .SUFFIXES: .bf .ebf
 
-test-zozotez.ebf: $(VERSION) $(MACRO_FILES) $(BASE) $(TAIL)
+test-zozotez.ebf: $(MACRO_FILES) $(BASE) $(TAIL)
 	cat $(MACRO_FILES) $(BASE) $(TAIL) > test-zozotez.ebf
 
 test-read.ebf:  macro-read.ebf $(BASE) test/read.ebf
@@ -43,11 +44,6 @@ test-print.ebf: macro-print.ebf $(BASE) test/print.ebf
 test-readprint.ebf: macro-read.ebf macro-print.ebf $(BASE) test/readprint.ebf
 	cat macro-read.ebf macro-print.ebf $(BASE) test/readprint.ebf > test-readprint.ebf
 
-
-version.bf: version.ebf
-	cat version.ebf | $(EBF_BIN) | sed 's/\$$//g' > version.tmp && \
-	${EBF_ERROR} version.tmp && \
-	mv version.tmp version.bf
 
 .ebf.bf : info
 	cat $< | $(EBF_BIN) | tee  $*.tmp  | $(APPLY_CODE) && \

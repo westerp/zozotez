@@ -67,11 +67,13 @@ LISP data
 ;;; sets up the memory
 ;;; moves pointer to a known area accoring to memory map
 {init_stack_symbol
-  -63>->                  ; 2 x 31 cell stack (in the future ths will be increased to 254 to be safe
-  252> array_crumble      ; makes room
-  252> string_ref         ; for array
-  252> assoc_ref          ; in this very
-  252> plist_ref             ; optimized way
+  -30>                                          ; 28 stack elements then 35 (18) symbols
+  ~'T " ? ~ \ : = s < a d c + - r p e'          ; for population stack
+  ->                                            ; then I'm at the cell after which is the stack mark
+  252> array_crumble                            ; makes room
+  252> string_ref                               ; for array
+  252> assoc_ref                                ; in this very
+  252> plist_ref                                ; optimized way
   @ends
 }
 
@@ -79,297 +81,72 @@ LISP data
 ;;; this will initialize the
 ;;; internal functions and texts
 {init_lisp_data
+  ; populate from stack
 
-  ;0 NIL is a symbol in memory
-  $type &Z_NIL
+  ;; setup NIL
+  $cx 6+(- $bx 6+(- $ax 6+))
+  $ax-(-$bx+$car+)
   $type &TYPE_SYM
+  $bx &sym_open
+  $ax &sym_zset_assoc_ref
+  $bx++++(-$ax++++)
+  $ax++ &sym_set_string_ref ; assumes next is 18
+  &sym_close
+  &lis_open_new_next
+  ;; end setup NIL
+  $dx+
+  while $ax+
+  (-
+    $ax = &pc_pop
+    while $ax
+    (
+      $ax(-$bx+$cx+)
+      $bx &sym_open
+      $dx(-$bx+$ax+)
+      $ax+ (-
+            &sym_to
+            $assoc_ref+
+            $string_ref+
+            &sym_from
+           )
+      &sym_close
+      $cx &lis_set_car
+      &lis_set_type_symbol
+      &lis_open_new_next
+      $bx(-$dx+)$dx+
+      $bx+
+    )
+    $bx(-$ax+)
+  )
+  &stack_open+
+  <<[[-]<<]
+  &stack_from_close->
+  &stack_from_close
 
-  ;1 T is the symbol T
-  $lis_crumble+@end
-  $type &ZX_T
-  $type &TYPE_SYM
-
-  ;;Special forms
-  ;2 quote
-  $lis_crumble+@end
-  $type &Z_quote
-  $type &TYPE_SYM
-
-  ;3 if
-  $lis_crumble+@end
-  $type &Z_if
-  $type &TYPE_SYM
-
-  ;4 macro
-  $lis_crumble+@end
-  $type &Z_macro
-  $type &TYPE_SYM
-
-  ;5 lambda
-  $lis_crumble+@end
-  $type &Z_lambda
-  $type &TYPE_SYM
-
-  ;; normal order functions
-  ;6 progn
-  $lis_crumble+@end
-  $type &Z_progn
-  $type &TYPE_SYM
-
-  ;7 set
-  $lis_crumble+@end
-  $type &ZX_set
-  $type &TYPE_SYM
-
-  ;8 eq
-  $lis_crumble+@end
-  $type &Z_eq
-  $type &TYPE_SYM
-
-  ;9 atom
-  $lis_crumble+@end
-  $type &Z_atom
-  $type &TYPE_SYM
-
-  ;10 placeholder for <
-  $lis_crumble+@end
-  $type &Z_lt
-  $type &TYPE_SYM
-
-  ;11 car (car '((a) b)) => (a), (car '((a) b) 1) => a
-  $lis_crumble+@end
-  $type &ZX_car
-  $type &TYPE_SYM
-
-  ;12 cdr (cdr '(a b c)) => (b c), (cdr '(a b c) 1) => (c)
-  $lis_crumble+@end
-  $type &ZX_cdr
-  $type &TYPE_SYM
-
-  ;13 cons (cons a b) => (a . b)
-  $lis_crumble+@end
-  $type &Z_cons
-  $type &TYPE_SYM
-
-  ;14 placeholder for + (+ a n [T])
-  $lis_crumble+@end
-  $type &Z_plus
-  $type &TYPE_SYM
-
-  ;15 placeholder for - (- a n [T])
-  $lis_crumble+@end
-  $type &Z_minus
-  $type &TYPE_SYM
-
-  ;16 placeholder for read
-  $lis_crumble+@end
-  $type &ZX_read
-  $type &TYPE_SYM
-
-  ;17 placeholder for print
-  $lis_crumble+@end
-  $type &ZZX_print
-  $type &TYPE_SYM
-
-  ;18 placeholder for eval
-  $lis_crumble+@end
-  $type &ZX_eval
-  $type &TYPE_SYM
-
-  ;19 string of T (1)
-  $lis_crumble+@end
-  $type &TYPE_NUM
-  $car ~"T"
-
-  ; 20-22 string of quote (2)
-  $lis_crumble+@end
+  &lis_to
   $type &TYPE_NUM
   $car ~"N"
-  $cdr 21+
+  &lis_from
+  $dx+(-$ex+$fx+)
+  $fx &lis_set_cdr
+  &lis_open_new_next
 
-  $lis_crumble+@end
+  &lis_to
   $type &TYPE_NUM
   $car ~"I"
-  $cdr 22+
+  &lis_from
+  $ex+ &lis_set_cdr
+  &lis_open_new_next
 
-  $lis_crumble+@end
+  &lis_to
   $type &TYPE_NUM
   $car ~"L"
-
-  ; 23-27 string of quote (2)
-  $lis_crumble+@end
-  $type &TYPE_NUM
-  $car ~"q"
-  $cdr 24+
-
-  $lis_crumble+@end
-  $type &TYPE_NUM
-  $car ~"u"
-  $cdr 25+
-
-  $lis_crumble+@end
-  $type &TYPE_NUM
-  $car ~"o"
-  $cdr 26+
-
-  $lis_crumble+@end
-  $type &TYPE_NUM
-  $car ~"t"
-  $cdr 27+
-
-  $lis_crumble+@end
-  $type &TYPE_NUM
-  $car ~"e"
-
   &lis_from
   &lis_close
-
-  $ends &Z_NIL
-  $ax &sym_open
-  $ax &sym_zset_assoc_ref
-  $ax 20+ &sym_set_string_ref
-  &sym_close
-
-  $ends &ZX_T
-  $ax &sym_open
-  $ax+ &sym_zset_assoc_ref
-  $ax 19+ &sym_set_string_ref
-  &sym_close
-
-  $ends &Z_quote
-  $ax &sym_open
-  $ax++ &sym_zset_assoc_ref
-  $ax 23+ &sym_set_string_ref
-  &sym_close
-
-  ;3 if
-  $ends &Z_if
-  $ax &sym_open
-  $ax+++ &sym_zset_assoc_ref
-  &sym_close
-
-  ;4 macro
-  $ends &Z_macro
-  $ax &sym_open
-  $ax++++ &sym_zset_assoc_ref
-  &sym_close
-
-  ;5 lambda
-  $ends &Z_lambda
-  $ax &sym_open
-  $ax 5+ &sym_zset_assoc_ref
-  &sym_close
-
-  ;; normal order functions
-  ;6 progn
-  $ends &Z_progn
-  $ax &sym_open
-  $ax 6+ &sym_zset_assoc_ref
-  &sym_close
-
-  ;7 set
-  $ends &ZX_set
-  $ax &sym_open
-  $ax 7+ &sym_zset_assoc_ref
-  &sym_close
-
-  ;8 eq
-  $ends &Z_eq
-  $ax &sym_open
-  $ax 8+ &sym_zset_assoc_ref
-  &sym_close
-
-  ;9 atom
-  $ends &Z_atom
-  $ax &sym_open
-  $ax 9+ &sym_zset_assoc_ref
-  &sym_close
-
-  ;10 placeholder for <
-  $ends &Z_lt
-  $ax &sym_open
-  $ax 10+ &sym_zset_assoc_ref
-  &sym_close
-
-  ;11 car (car '((a) b)) => (a), (car '((a) b) 1) => a
-  $ends &ZX_car
-  $ax &sym_open
-  $ax 11+ &sym_zset_assoc_ref
-  &sym_close
-
-  ;12 cdr (cdr '(a b c)) => (b c), (cdr '(a b c) 1) => (c)
-  $ends &ZX_cdr
-  $ax &sym_open
-  $ax 12+ &sym_zset_assoc_ref
-  &sym_close
-
-  ;13 cons (cons a b) => (a . b)
-  $ends &Z_cons
-  $ax &sym_open
-  $ax 13+ &sym_zset_assoc_ref
-  &sym_close
-
-  ;14 placeholder for + (+ a n [T])
-  $ends &Z_plus
-  $ax &sym_open
-  $ax 14+ &sym_zset_assoc_ref
-  &sym_close
-
-  ;15 placeholder for - (- a n [T])
-  $ends &Z_minus
-  $ax &sym_open
-  $ax 15+ &sym_zset_assoc_ref
-  &sym_close
-
-  ;16 placeholder for read
-  $ends &ZX_read
-  $ax &sym_open
-  $ax 16+ &sym_zset_assoc_ref
-  &sym_close
-
-  ;17 placeholder for print
-  $ends &ZZX_print
-  $ax &sym_open
-  $ax 17+ &sym_zset_assoc_ref
-  &sym_close
-
-  ;18 placeholder for eval
-  $ends &ZX_eval
-  $ax &sym_open
-  $ax 18+ &sym_zset_assoc_ref
-  &sym_close
-
 }
 
 
 ;;; LISP functions
-
-;;; (defmacro symbol_to_reference (reference symbol)
-;;; 	`(setf ,reference ,symbol))
-{symbol_to_reference
-  ^1symbol = &lis_get_car
-  &lis_close
-  ^0reference &lis_open
-  ^1symbol &sym_open
-  ^1error+
-  #^0symbol = &sym_get_assoc_ref
-  # while ^0symbol
-  (-
-      %0symbol &lis_set_car
-      ^0artype = &sym_get_artype
-      ^0artype-  &lis_set_type
-      ^1error-
-  )
-  if ^1error
-  (-
-      &lis_set_error
-  )
-  &lis_close
-  &sym_close
-}
-
-;; ((lambda (rep)
-
 
 ;; (defmacro zozot_set (reference symbol symbol_target_type symbol_target)
 ;;  `(setf ,reference (set ',symbol ,symbol_target ))
@@ -481,36 +258,14 @@ LISP data
 ;   ^2target &lis_set_car
 ;   &lis_close
 }
-;; some known symbol hashes
-;; case sensetive NIL/T are upper, rest is lower
-{Z_NIL         36       6+(-> 6+)>   }
-{ZX_T          167     13+(->13+)>2- }
-{Z_quote       249     16+(->16+)>7- }
-{Z_if          90       9+(->10+)>   }
-{Z_macro       56       7+(-> 8+)>   }
-{Z_lambda      41       6+(-> 7+)>-  }
-{Z_progn       230     15+(->15+)>5+ }
-{ZX_set        12       3+(-> 4+)>   }
-{Z_eq          43       7+(-> 6+)>+  }
-{Z_atom        210     14+(->15+)>   }
-{Z_lt          191     14+(->14+)>5- }
-{ZX_car        19       4+(-> 5+)>-  }
-{ZX_cdr        46       7+(-> 7+)>3- }
-{Z_cons        50       7+(-> 7+)>+  }
-{Z_plus        208     14+(->15+)>2- }
-{Z_minus       206     14+(->15+)>4- }
-{ZX_read       147     12+(->12+)>3+ }
-{ZX_eval       78       9+(->9+ )>3- }
-{ZZX_print     20       4+(->5+ )>   }
-
 
 ;; Lisp data types
 {TYPE_NUL (-)}   ; available cell
 {TYPE_NUM 1+}   ; number (the strings of symbol names are stored as number sequence)
 {TYPE_SYM 2+}   ; symbol (hash in car)
 {TYPE_LIS 3+}   ; list
-{TYPE_LAP 4+}   ; list apply 1, eg. expr (+ a b) the head is LIST when + is evaluated it's AP1, when AP2 all parameters are evaluated
-{TYPE_LA2 5+}   ; list apply 2
+{TYPE_LAP 5+}   ; list pre-apply, , eg. expr (+ a b) the head is LIST when + is evaluated it's AP, when AP2 all parameters are evaluated
+{TYPE_LA2 4+}   ; list apply
 
 ;; Known locations
 {LOC_NIL  (-)}
@@ -524,8 +279,10 @@ LISP data
     while %type not null
     (
       $end+
-      $type-(-((-)
-            $end -|"L"(-))
+      $type-(-(-(-((-)
+            $end -|"PA"(-))
+            $end(-|"AP"(-)))
+            $end(-|"L"(-)))
             $end(-|"S"(-))
               $fx+
             )
@@ -1004,18 +761,10 @@ LISP data
   &lis_from
 }
 
-;;; set methods that pours on top of eventual values
-;;; to really set you'll need to do the lis_zero_* first
-;;; or know the call is free,
-{lis_set_type
-  ^0(-                ; we are at ^0
-    &lis_to           ; moves to array element
-    $type+            ; goes to type
-    &lis_from         ; move back to variable
-  )                   ; self balancing
-}
 
-{lis_set_type_quote &lis_to $type &TYPE_LAP &lis_from}
+{lis_set_type_quote &lis_to $type &TYPE_LA2 &lis_from}
+{lis_upd_type_to_apply &lis_to $type- &lis_from}
+{lis_set_type_preapply &lis_to $type &TYPE_LAP &lis_from}
 {lis_set_type_list &lis_to $type &TYPE_LIS &lis_from}
 {lis_set_type_number &lis_to $type &TYPE_NUM &lis_from}
 {lis_set_type_symbol &lis_to $type &TYPE_SYM &lis_from}
@@ -1037,13 +786,6 @@ LISP data
   )                   ; self balancing
 }
 
-;;; Sets ERROR in open cell.
-{lis_set_error
-  &lis_to
-  $type &TYPE_SYM
-  $car  &LOC_E
-  &lis_from
-}
 
 ;;; HELPER macroes
 ;;; These should not be used directly but are used by

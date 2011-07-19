@@ -29,11 +29,12 @@
 ;;;; #\)
 ;;;; specials will not be implemented in the first version
 
-;; assume cdr of arg in ^0, car of arg in ^1 and that list is closed
-
-;; what flags do we need?
-;; no_list
-
+;;; (print what [specials])
+;;; assume that list is closed
+;;;
+;;; @param ^0 special chars flag
+;;; @param ^1 what to print
+;;; @return expression to print (unimplemented)
 {zozot_print
   ^1ref(-^3ref+)
   while ^3argument+ not empty
@@ -48,7 +49,7 @@
     switch ^3type-
     (- not number
       (- not symbol
-        ( (-)^4type_handler-|"<internal apply>"(-))
+        ( (-)^4type_handler-|"#'"(-)+)
          ^4type_handler (- list
                            if continuing ^2list(- &stack_push ) |"(" (-)
                            ^2list+ = &lis_get_cdr
@@ -64,16 +65,18 @@
                           &lis_close
                           ^4string_ref_null+
                           while ^3string_ref is not null
-                          (-^4srn-^3(
-                                &lis_open
-                                ^3car = &lis_get_car
-                                ^3char . (-)
-                                ^3string_ref = &lis_get_cdr
-                                &lis_close ))
-                            if ^4string_ref_null is set
-                            (- |"STRING-REF-UNSET"(-))
-                           ^1atom(-)+ ; set atom
+                          (
+                             ^4srn(- ^3in-)
+                             ^3string_ref &lis_open
+                             ^3car = &lis_get_car
+                             ^3char . (-)
+                             ^3string_ref = &lis_get_cdr
+                             &lis_close
                           )
+                          if ^4string_ref_null is set
+                          (- |"STRING-REF-UNSET"(-))
+                          ^1atom(-)+ ; set atom
+                        )
     ) ^4type_handler   (- |"NUM"(-) &lis_close ) ; Number type used just to store string_ref so this will not happen yet
     if ^1atom set
     (-
