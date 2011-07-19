@@ -1,0 +1,6 @@
+The files in this folder is binaries and tools from the EBF compiler 
+suit by Pål Wester. You may retrieve both full binary packages and 
+source packages or svn access at http://sylwester.no/ebf/
+
+Th ebf binary is compiled for linux i386 and are known to work and
+perform acceptable in amd64-based mashines as well.
