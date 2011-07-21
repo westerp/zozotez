@@ -2,7 +2,7 @@
 ZOZOTEZ LISP INTERPRETER by PÅL WESTER
 
 URL http://sylwester.no/zozotez
-VERSION $Rev: 78 $
+VERSION $Rev$
 COMPILED BY: COMPILERINFO
 
 Zozotez is free software: you can redistribute it and/or modify
