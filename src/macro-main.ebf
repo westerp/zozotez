@@ -79,7 +79,7 @@
                         (%ax-; if not if
                           (-(   ; if not macro or lambda
                                 ; we substract with num functions (12)
-                                #$bx- ; temporarily remove flag
+                                $bx- ; temporarily remove flag
                                 $cx 12+
                                 &substract_left ; substract 12 from %ax without reducing ax below 0
                                 $bx+ ; put flag back
@@ -168,7 +168,7 @@ Au revoir!
     $ex+
     $dx($ex-$dx(-$ax+))
     $ex(- $ax = &pc_pop)
-    # end of while eval
+     end of while eval
   )
   &lis_close
   &lis_print
@@ -235,7 +235,7 @@ Au revoir!
 ;;; push stack to evaluate all arguments
 ;;; Tested OK for 0, 1, 2 and 3 arguments
 {generic_preapply_eval
-#    $ex = &lis_get_cdr          ; this is the unevaluated argument list
+    $ex = &lis_get_cdr          ; this is the unevaluated argument list
     &lis_upd_type_to_apply
     $dx+ = &lis_get_addr
     while $ex is not null
@@ -342,6 +342,9 @@ Au revoir!
   ;; and we are only interseted if it is of type pre-apply AND
   ;; car is one of 4 (macro) or 5 (lambda) everything else is an error
 
+  ;; operations in order prefixed with B (both), L (only lambda), M (only macro)
+  ;; B a = pc_pop
+  ;; B pc_push a new cons (apply " . lambda-arglist
 
   $fx = &lis_get_car
   $ex = &lis_close_addr
@@ -501,9 +504,70 @@ Au revoir!
 }
 
 
+;; (set a expr1 expr2)    => (set-car expr1 expr2)
+;; (set d expr1 expr2)    => (set-cdr expr1 expr2)
+;; (set 'symbol expr2)    => (setq symbol expr2)
+;; (set expr1 expr2)      => ERROR if expr1 does not evaluate to a  symbol
 {apply_set_eval
-  $cx|"Merde: apply : (set)"
+  if $fx is not NIL
+  (
+     ; that means that (f . e) exists in our (: . (f . e))
+     $fx-  = &lis_get_cdr
+     $ex   = &lis_get_car
+     $ex(-$dx+$cx+)+
+
+     ;; TODO: We might use & (:), eg (: : expr replacement) to clone
+     ;;       a cons (no matter what type). It may be used to redefine
+     ;;       how predefined symbols are shown, like change NIL/T to
+     ;;       clojures false/true.
+     if $dx 10- is not a
+     (-
+       ( (-) ; not a or d, should now be symbol
+         &lis_close
+         $cx &lis_open
+         $ex- = &lis_get_type
+         $dx+ ; else flag
+         if $ex-- is not zero ((-) not symbol $dx- )+
+         if $dx indicates symbol
+         (-
+            $ex- = &lis_get_car ; get hash
+            $ex &sym_open
+            if $fx
+            (
+              $dx+
+              &lis_close
+              $fx &lis_open
+              $fx = &lis_get_type
+              $fx---((-)$dx-)
+              if $dx indicates list
+              (-
+                 $fx = &lis_get_car
+              )
+              $fx(-$dx+$bx+)
+            )
+            $dx &sym_zset_assoc_ref
+            &sym_close
+         )
+       )
+       $ex (- $cx(-)|"Merde: set-cdr" ))
+      $ex  (- $cx(-)|"Merde: set-car" )
+      $fx(-)
+  )
+  $fx = &pc_pop
+  else if $ex
+  (-
+    $fx(-)+
+    # $cx(-)|"Merde: invalid (set ...)"
+  )
+  if $fx-
+  (
+      &lis_close
+      $fx &lis_open
+      $bx &lis_set_car
+  )
+  $bx(-)
 }
+
 
 ;;; implements car
 {apply_car_eval
@@ -602,6 +666,7 @@ Au revoir!
 ;;; zozot_read dos set-car of return
 ;;; This only have to clear the registers
 {apply_read_eval
+  &lis_close
   $fx(-)
   $ex(-)
   $ax &zozot_read

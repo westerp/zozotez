@@ -2,7 +2,7 @@
 ZOZOTEZ LISP INTERPRETER by PÅL WESTER
 
 URL http://sylwester.no/zozotez
-VERSION $Rev: 75 $
+VERSION $Rev: 78 $
 COMPILED BY: COMPILERINFO
 
 Zozotez is free software: you can redistribute it and/or modify
@@ -17,17 +17,18 @@ or awib to get native C code.
 
 Documentation: This is not complete. When finished it will have functions
 and macroes. This version only supports the primitive functions:
-form    commonname      example         example-result
+form    commonname      example         example-result SE=side-effect
 "       quote           (" a) or 'a     a
 ?       if              (? T NIL T)     NIL
 =       eq              (= 'a 'a)       T
 s       atom/symbolp	(s '(a b))      NIL
 c       cons            (c 'a 'b)       (a . b)
+:       set             (: 'x 'y)       y (SE: and x evaluates to y)
 a       car             (a '(a b))      a
 d       cdr             (d '(a b))      (b)
-r       read            (r)             expression read
+r       read            (r)             (SE: returns expression read)
 e       eval            (e ''a)         a
-p       print           (p 'a)          a (as both return and side-effect)
+p       print           (p 'a)          a (SE: prints a)
 \       lambda          (\ (a) body)    #'(\ (a) body)
 ~       macro           (~ (a) body)    #'(~ (a) body)
 
@@ -47,13 +48,15 @@ as allowed by section 7 in the GPL. Search for LICENSE to go directly there.
 
 To be implemented by the end of 2011:
 form    commonname      example                              example-result
-:       set             (: 'a 'b)     b (+ side effect a will resolve to b)
 (\)     funcall         ((\ (a) (c a a)) 'x)                        (x . x)
 (~)     maccall         ((~ (a b) (c a (c(c a (c b))))) d '(a b c))     (c)
+: a     set-car         (: a '(a) 'b)                     (b) (destructive)
+: d     set-cdr         (: d '(a) 'b)                 (a . b) (destructive)
+: :     N/A             (: : NIL 'F)           F (destuctive replaced cell)
 
 Not that a function or macro can be given a name with set. eg
 (: 'dupop (~ (a b) (c a (c(c a (c b)))))) so that
-(dopop car '(((B)))) expands to (car(car '(((B))))) and results in (B)
+(dupop car '(((B)))) expands to (car(car '(((B))))) and results in (B)
 
 ]
                                     **

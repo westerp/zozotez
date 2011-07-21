@@ -22,7 +22,7 @@
 
 ;;; This is for my debugger, bf1.pl,  to give memory locations labels
 ML/sym_crumble/string_ref/assoc_ref/plist_ref/ends/ax/bx/cx/dx/ex/fx/end/type/car/cdr/lis_crumble
-PTR=1068/4/4
+PTR=1072/4/4
 
 Stack area
 :stack_tmp
@@ -70,10 +70,10 @@ LISP data
   -30>                                          ; 28 stack elements then 35 (18) symbols
   ~'T " ? ~ \ : = s < a d c + - r p e'          ; for population stack
   ->                                            ; then I'm at the cell after which is the stack mark
-  252> array_crumble                            ; makes room
-  252> string_ref                               ; for array
-  252> assoc_ref                                ; in this very
-  252> plist_ref                                ; optimized way
+  253> array_crumble                            ; makes room
+  253> string_ref                               ; for array
+  253> assoc_ref                                ; in this very
+  253> plist_ref                                ; optimized way
   @ends
 }
 
@@ -143,120 +143,6 @@ LISP data
   $car ~"L"
   &lis_from
   &lis_close
-}
-
-
-;;; LISP functions
-
-;; (defmacro zozot_set (reference symbol symbol_target_type symbol_target)
-;;  `(setf ,reference (set ',symbol ,symbol_target ))
-;; @argument reference Where to store the
-;; @argument symbol The symbol to set
-;; @argument symbol_target_type type element of target cell
-;; @argument symbol_target address of target cell
-;; @side-effect sets symbol table
-;; expects arguments to be golden
-{zozot_set
-;   ^0reference &lis_open
-;   ^1symbol &sym_open
-;   ^2ttype (- ^1+ ^0+ )
-;   ^0ttype &sym_zset_artype
-;   ^1ttype &lis_set_type ;NB: appends type
-;   ^3target (- ^2+ ^0+)
-;   ^2target &lis_set_car
-;   &lis_close
-;   ^0target &sym_zset_assoc_ref
-;   &sym_close
-}
-
-;; (defmacro zozot_car (reference target)
-;;  `(setf ,reference (car ',argument_ref))
-{zozot_car
-;     ^2target &lis_open
-;     ^2car =  &lis_get_car
-;     &lis_close
-;     ^0reference &lis_open
-;     ^2car &lis_set_car
-;     &lis_close
-}
-
-;; (defmacro zozot_cdr (reference target)
-;;  `(setf ,reference (cdr ',argument_ref))
-;; NB: Does not support pair.
-{zozot_cdr
-;     ^1target &lis_open
-;     ^1cdr =  &lis_get_cdr
-;     &lis_close
-;     ^0reference &lis_open
-;     ^1cdr &lis_set_car
-;     &lis_close
-}
-
-;; (defmacro zozot_atom (reference target_type target)
-;;  `(setf ,reference (atom ',target))
-{zozot_atom
-;     ^0reference &lis_open
-;     &lis_to $type &TYPE_SYM &lis_from
-;     ^3zero+
-;     if ^2target
-;     [
-;       (-)
-;       ^3zero &TYPE_SYM ; 3zero has 1 from before so its the NEXT type.
-;       &substract_left
-;       ^2atom+
-;       if ^1target_type [(-) ^2atom- ] *-1
-;       if ^2atom
-;       [-
-;         &lis_to $car &LOC_T &lis_from
-;         ^3zero
-;       ]
-;     ] *-1
-;     if ^3zero
-;     [-
-;       &lis_to $car &LOC_T &lis_from
-;       ^4endif
-;     ]
-}
-
-;; (defmacro zozot_eq (reference target1_type target1 target2_type target2)
-;;  `(setf ,reference (eq ',target1 ',target2))
-{zozot_eq
-;     ; eq will work for al types where the address is the same
-;     ; or they have similar car values and are of similar type
-;
-;     ^1target1(- ^2target2- ^3target1+)
-;     if ^2target2 is not equal to 1target1
-;     [
-;         ^3target1(- ^2target2+ ^1target1+)
-;         TODO: FInish
-;         ^3target1
-;     ] *-1 ; fix pointer to assume false
-;     if ^3target1 is not null
-;     [ equal address
-;           %3target1(-)
-;           ^2target2(-)
-;           ^1target1(-)
-;           ^0reference &lis_open
-;           &lis_to $car &LOC_T &lis_from
-;           &lis_to $type &TYPE_SYM
-;           &lis_close
-;           ^4zero
-;     ]
-}
-
-
-{zozot_eval
-
-}
-
-{zozot_quote
-;   ^1ttype = &lis_get_car
-;   ^2target = &lis_get_cdr
-;   &lis_close
-;   ^0reference &lis_open
-;   ^1ttype &lis_set_type
-;   ^2target &lis_set_car
-;   &lis_close
 }
 
 ;; Lisp data types
