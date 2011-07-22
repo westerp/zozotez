@@ -109,33 +109,35 @@
 
                     ;; (apply 2,4,5) could be used for internal
                     ;; functions, like unbind of parameters
-                    $ax---; \3
-                    (%ax---; \6
-                      (%ax-; \7
-                        (%ax-; \8
-                          (%ax-; \9
-                            (%ax-; \10
-                              (%ax-; \11
-                                (%ax-; \12
-                                  (%ax-; \13
-                                    (%ax-; \14
-                                      (%ax-; \15
-                                        (%ax-; \16
-                                          (%ax-; \17
-                                            ((-) $bx- $cx|"Merde: apply list-lambda" )
-                                              $bx (- &apply_evalx_eval  )
-                                          ) $bx (- &apply_print_eval )
-                                        ) $bx (- &apply_read_eval )
-                                      ) $bx (- $cx|"Merde: apply -" )
-                                    ) $bx (- $cx|"Merde: apply +" )
-                                  ) $bx (- &apply_cons_eval )
-                                ) $bx (- &apply_cdr_eval )
-                              ) $bx (- &apply_car_eval )
-                            ) $bx (- $cx|"Merde: apply <" )
-                          ) $bx (- &apply_atom_eval )
-                        ) $bx (- &apply_eq_eval )
-                      ) $bx (- &apply_set_eval )
-                    ) $bx (- &apply_if_eval )
+                    $ax--; \2
+                    (%ax-; \3
+                      (%ax---; \6
+                        (%ax-; \7
+                          (%ax-; \8
+                            (%ax-; \9
+                              (%ax-; \10
+                                (%ax-; \11
+                                  (%ax-; \12
+                                    (%ax-; \13
+                                      (%ax-; \14
+                                        (%ax-; \15
+                                          (%ax-; \16
+                                            (%ax-; \17
+                                              ((-) $bx- &apply_list_defun_eval )
+                                                $bx (- &apply_evalx_eval  )
+                                            ) $bx (- &apply_print_eval )
+                                          ) $bx (- &apply_read_eval )
+                                        ) $bx (- $cx|"Merde: apply -" )
+                                      ) $bx (- $cx|"Merde: apply +" )
+                                    ) $bx (- &apply_cons_eval )
+                                  ) $bx (- &apply_cdr_eval )
+                                ) $bx (- &apply_car_eval )
+                              ) $bx (- $cx|"Merde: apply <" )
+                            ) $bx (- &apply_atom_eval )
+                          ) $bx (- &apply_eq_eval )
+                        ) $bx (- &apply_set_eval )
+                      ) $bx (- &apply_if_eval )
+                    ) $bx (- &apply_list_defun_cleanup )
                   )
            ) $bx (- &generic_list_eval )
         ) $bx (- &symbol_to_reference )
@@ -343,31 +345,75 @@ Au revoir!
   ;; car is one of 4 (macro) or 5 (lambda) everything else is an error
 
   ;; operations in order prefixed with B (both), L (only lambda), M (only macro)
-  ;; B a = pc_pop
-  ;; B pc_push a new cons (apply " . lambda-arglist
+  ;; L a = pc_pop
+  ;; M pc_push (apply eval . next_new) on stack
+  ;; M a = new cons, type L
+  ;; B pc_push a new cons (apply " . lambda-arglist) ; " won't happen in apply so we use it as UNBIND. This wont have return :)
+  ;; B pc_push a
+  ;; L set bx to 1 (to get parameters evaluated in the &generic_preapply_eval)
+  ;; M upd from pre-apply to apply and set address in dx (for next eval round)
+
+  ;; Next step (Apply code) is the same werther it is lambda or macro
 
   $fx = &lis_get_car
   $ex = &lis_close_addr
   $fx = &lis_open
   $ax = &lis_get_type ; this should be pre-apply
   $ax 5-              ; then it will be zero now
-  if %ax is zero not zero ((-)$bx-)
-  $dx+
+  if %ax is not zero ((-)$bx-)
+  $dx+  ; an error flag
   if $bx is set
   (
-      ;; now get car
+      $fx = &lis_get_cdr ; the tail of the lambda/macro
+      ;; now get car to check lambda/macro
       $ax &lis_get_car
       $ax 4-    ; check for macro
       if car was macro
       (-
         if car was lambda
         ((-)$bx-
-        ) $bx (-$dx- lambda $cx|"Merde pre-apply list-lambda" )
-      ) $bx (-$dx- macro $cx|"Merde pre-apply list-macro" )
+        ) $bx (-$dx- lambda/expr
+                $cx = &pc_pop ; this should end up in ax
+                $ends+         ; this shoudl end up in cx, then bx
+              )
+      ) $bx (-$dx- macro/fexpr
+              &lis_close
+              $ax = &lis_open_new_addr
+              &lis_set_type_quote       ; apply
+              $dx 17+ &lis_set_car      ; eval
+              $bx = &lis_get_addr_new
+              $ax &pc_push              ; push it as next in line
+              $bx(-$dx+$ax+)            ; double copy of new cons
+              $ax+                      ; ax should have +1 since it's not popped
+              $dx &lis_set_cdr          ; set cdr, we have  (apply eval . next_new)
+              &lis_open_new_next        ; need to set type
+              &lis_set_type_list        ; on new cons as well
+            )
+       $ends(-$cx(-$ax+)+) ; when lambda we need to temporary store ax in something else
   )
   if $dx
   (-
-    $cx|"Merde: pre-apply list without lambda/macro "
+    $cx|"Merde: undefined function is"
+  )
+  if $ax is set
+  (-
+    ;; this will happen for both lambda and macro
+    &lis_close
+    $bx = &lis_open_new_addr
+    &lis_set_type_quote         ; apply
+    $fx   &lis_set_cdr          ; set cdr to rest of lambda-expression
+    $fx   2+ &lis_set_car       ; apply quote == unbind
+    &lis_close                  ; close new cell
+    $ex &lis_open               ; open original expression
+    $bx &pc_push                ; this is an expression that does not have a return
+    $ax &pc_push                ; this is the return (arg for eval in macro)
+    $ax+; flag
+    if $cx (- $ax- $bx+ )       ; set bx to get args (and expr) evaluated as function
+    else $ax
+    (- ; macro. need to copy ex to ex and dx
+       &lis_upd_type_to_apply
+       $dx+ = &lis_get_addr
+    )
   )
 }
 
@@ -375,6 +421,24 @@ Au revoir!
 ;;; All arguments are evaluated
 ;;; so anyway which function we have we have
 ;;; list-flag in fx and first argument open
+
+
+;;; This is called for both macro and lambda
+;;; This is because the differences between
+;;; them is performed by the pre-apply stage
+;;; This should do the binding then
+;;; push every next element on stack with
+;;; an NIL return for every non-last
+;;; expression (progn)
+{apply_list_defun_eval
+  $cx|"Merde: apply list-lambda/macro"
+}
+
+;;; this undoes the bindings done by
+;;; apply_list_defun_eval
+{apply_list_defun_cleanup
+  $cx|"Merde: apply list-lambda/macro cleanup"
+}
 
 
 ;;; This actually just checks the second argument if it's
@@ -446,6 +510,8 @@ Au revoir!
 ;;; (eq) => T
 ;;; (eq NIL) => T
 ;;; (eq NIL NIL) => T
+;;; (eq 't 't) => T
+;;; (eq 't 'g) => NIL
 ;;; Tested OK
 {apply_eq_eval
   if $fx
@@ -557,7 +623,7 @@ Au revoir!
   else if $ex
   (-
     $fx(-)+
-    # $cx(-)|"Merde: invalid (set ...)"
+    $cx(-)|"Merde: invalid (set ...)"
   )
   if $fx-
   (

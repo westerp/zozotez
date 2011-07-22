@@ -38,7 +38,7 @@ while(<IMG>)
   foreach $i (split(//,$_))
   {
     #print $i;
-    if( $i =~ /[#\*]/ ){
+    if( $i =~ /[\*]/ ){
         print get_char();
     } else {
       print $i;
