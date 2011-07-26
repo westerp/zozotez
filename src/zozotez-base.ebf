@@ -22,7 +22,7 @@
 
 ;;; This is for my debugger, bf1.pl,  to give memory locations labels
 ML/sym_crumble/string_ref/assoc_ref/plist_ref/ends/ax/bx/cx/dx/ex/fx/end/type/car/cdr/lis_crumble
-PTR=1072/4/4
+PTR=1520/4/4
 
 Stack area
 :stack_tmp
@@ -67,14 +67,18 @@ LISP data
 ;;; sets up the memory
 ;;; moves pointer to a known area accoring to memory map
 {init_stack_symbol
-  -30>                                          ; 28 stack elements then 35 (18) symbols
+  ->>>+++++++(-<++++++++)<+++                   ; 59
+  [->>>>>>>[>>>>>>>>]+[<<<<<<<<]>]              ; 8*59+1 = 480
+  >>>>>>>[->>>>>>>>]                            ; goto 480?
+  <<<                                           ; 478 stack elements then 33 (17) symbols
   ~'T " ? ~ \ : = s < a d c + - r p e'          ; for population stack
   ->                                            ; then I'm at the cell after which is the stack mark
-  253> array_crumble                            ; makes room
-  253> string_ref                               ; for array
-  253> assoc_ref                                ; in this very
-  253> plist_ref                                ; optimized way
-  @ends
+
+  >>>                                          ; make room for numbers
+  +++(-<++++++(-<+++++++))<<                   ; create 126
+  [->>>>>>>[>>>>>>>>]+[<<<<<<<<]>]             ; multiplied by 8 cells
+  >>>>>>>[->>>>>>>>]                           ; 252 array places
+  @dx
 }
 
 ;;; set known data
