@@ -24,23 +24,23 @@
 $ax &pc_push
 &lis_set_type_list
 $ax = &lis_get_addr_new
-$ax &lis_set_cdr
+$ax(-$bx+$cx+)
+$bx &lis_set_car
 $ax = &lis_get_addr_2new
-$ax &lis_set_car
+$ax &lis_set_cdr
 &lis_open_new_next
 &lis_set_type_list
-$ax = &lis_get_addr_new
-$ax &lis_set_car
 &lis_open_new_next
 &lis_set_type_list
+$cx &lis_set_car
 &lis_close
 $ax+++ &pc_push
 $ax++ &pc_push
 $ax+ &pc_push
-$ax|'Printing: NIL, T, ", STRING-REF-UNSET, ((NIL) (NIL))
+$ax|'Printing: NIL, T, ", ?, ((NIL) (NIL))
 '(-)
 $bx+(-
-#  $ax &zozot_print
+#  $ax+ &zozot_print
 #  $bx &pc_pop
 )
 

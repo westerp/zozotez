@@ -17,24 +17,13 @@
 ;;;; You should have received a copy of the GNU General Public License
 ;;;;
 ;;;; print implementation (print what [specials])
-;;;; Some characters are unavailable and therefore have some symbols
-;;;; These will be translated to their respective char with specials
-;;;; set to ANYTHING. To not use specials don't supply the extra parameter
-;;;; #\Space
-;;;; #\Newline
-;;;; #\Tab
-;;;; #\'
-;;;; #\.
-;;;; #\(
-;;;; #\)
-;;;; specials will not be implemented in the first version
 
 ;;; (print what [specials])
 ;;; assume that list is closed
 ;;;
-;;; @param ^0 special chars flag
+;;; @param ^0 outer
 ;;; @param ^1 what to print
-;;; @return expression to print (unimplemented)
+;;; @return void
 {zozot_print
   ^1ref(-^3ref+)
   while ^3argument+ not empty
@@ -51,11 +40,13 @@
       (- not symbol
         ( (-)^4type_handler-|"#'"(-)+)
          ^4type_handler (- list
-                           if continuing ^2list(- &stack_push ) |"(" (-)
-                           ^2list+ = &lis_get_cdr
-                           ^5car+ = &lis_get_car
-                            &lis_close
-                           ^1atom(-)
+                           if continuing ^2list(- &stack_push )
+                          ^1atom(-)+
+                          if ^0index is not zero [+ ^1- |"(" (-) ] *-1
+                          else ^1else [- ^0+ ^2end ]
+                          ^2list+ = &lis_get_cdr
+                          ^5car+ = &lis_get_car
+                          &lis_close
                         )
       ) ^4type_handler  (- symbol
                           ^3car = &lis_get_car
@@ -80,31 +71,34 @@
     ) ^4type_handler   (- |"NUM"(-) &lis_close ) ; Number type used just to store string_ref so this will not happen yet
     if ^1atom set
     (-
-      while ^2list ( ; we are in a list but dnt know if it's the end
-      ^3null+
-      ^2list-
-      ( ; we more in this list
-        &lis_open
-        ^2list_flag+
-        ^3type- = &lis_get_type
-        if ^3type--- is not list == dotted pair
-        (
-          (-) |" . "(-)
-          ^5cdr+ = &lis_close_addr
-          ^4list_copy+ ; how to set ^2list to 1?
-          ^2list_flag-
+      while ^2list
+      ( ; we are in a list but don't know if it's the end
+        ^3null+
+        ^2list-
+        ( ; we more in this list
+          &lis_open
+          ^2list_flag+
+          ^3type- = &lis_get_type
+          if ^3type--- is not list == dotted pair
+          (
+            (-) |" . "(-)
+            ^5cdr+ = &lis_close_addr
+            ^4list_copy+ ; how to set ^2list to 1?
+            ^2list_flag-
+          )
+          else if ^2list_flag set == normal next element
+          (-
+            ^5car+ = &lis_get_car
+            ^4list_copy+ = &lis_get_cdr
+            &lis_close
+          )
         )
-        else if ^2list_flag set == normal next element
+        if cdr is ^3null
         (-
-          ^5car+ = &lis_get_car
-          ^4list_copy+ = &lis_get_cdr
-          &lis_close
-        )
-      )
-      if cdr is ^3null
-      (-
-          |")"(-)
-          ^2list = &stack_pop ; if 0 or other we have positive value.
+            ^1flag+
+            ^0paren-[ ^1- |")"(-) ] *-1
+            else ^1else [-^0+^2end]
+            ^2list = &stack_pop ; if 0 or other we have positive value.
         )
       )
       if ^4list_copy (- ^2list+ ); restore
@@ -113,8 +107,8 @@
     ^3atom_copy(-^1+)
     if ^5new_car (- ^3copy+)
   )
-   10+.(-) ; prints linefeed
-   ^1atom(-)
+  ^1atom(-)
+  ^0index((-)10+.(-))
 }
 
 ;abba => abba\n
