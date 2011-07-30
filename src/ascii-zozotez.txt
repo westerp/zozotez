@@ -17,26 +17,43 @@ or awib to get native C code.
 
 Documentation: This is not complete. When finished it will have functions
 and macroes. This version only supports the primitive functions:
-form    commonname      example         example-result SE=side-effect
-"       quote           (" a) or 'a     a
-?       if              (? T NIL T)     NIL
-=       eq              (= 'a 'a)       T
-s       atom/symbolp    (s '(a b))      NIL
-c       cons            (c 'a 'b)       (a . b)
-:       set             (: 'x 'y)       y (SE: and x evaluates to y)
-a       car             (a '(a b))      a
-d       cdr             (d '(a b))      (b)
-r       read            (r)             (SE: returns expression read)
-e       eval            (e ''a)         a
-p       print           (p 'a)          a (SE: prints a)
-\       lambda          (\ (a) body)    #'(\ (a) body)
-~       macro           (~ (a) body)    #'(~ (a) body)
-(\)     funcall         (\ () ''w)      (" w)
-(~)     maccall         (~ () ''w)      w
+form    commonname      example           example-result SE=side-effect
+"       quote           (" a) or 'a       a
+?       if              (? T NIL T)       NIL
+=       eq              (= 'a 'a)         T
+s       atom/symbolp    (s '(a b))        NIL
+c       cons            (c 'a 'b)         (a . b)
+:       set             (: 'x 'y)         y (SE: and x evaluates to y)
+a       car             (a '(a b))        a
+d       cdr             (d '(a b))        (b)
+r       read            (r)               (SE: returns expression read)
+e       eval            (e ''a)           a
+p       print           (p 'a)            a (SE: prints a)
+\       lambda          (\ (a) body)      #'(\ (a) body)
+~       flambda         (~ (a) body)      #'(~ (a) body)
+(\)     funcall         ((\ (x) x)''w)    (" w)
+(~)     maccall         ((~ (x) x)''w)    w
 
 The program-counter is seeded with (e(r)). To get output you can enclose
 your expression in p. eg.
 (p (? (= 'a 'b) 'a_is_b (? (= 'a 'a) 'a_is_a 'both_false)))) => a_is_a
+
+To get an interactive session you can feed it this:
+((:'@(\()(p'Zozotez-moi~>())(p(e(r)))(@))))
+
+If you have more than 8 bit address space you may try thus classic LISP:
+((\
+  (set quote lambda cons car cdr if eq atom flambda print read eval au-revoir
+  REPL list setq)
+    (print '(Bonjour to Zozotez REPL classic LISP1. (au-revoir) to exit.) NIL)
+    (REPL))
+ : " \ c a d ? = s ~ p r e ; builtins
+ (\ () 'au-revoir) ; exit-function
+ (\ () ; REPL
+      (print 'Zozotez-moi~>())
+      (if (eq (print(eval(read))) 'au-revoir) () (REPL)))
+ (\ q q) ; list
+ (~ ($s $o) (list set (list quote $s) $o))) ; setq
 
 note about read: Read will ignore unbalanced parenthesis and if there are
 additional elements it will enclose the input in a list. eg ")))(car x) a"
@@ -47,51 +64,8 @@ note about print: print takes a second argument. If it is given (any) if will
 for lists print it without the parenthesis. For atoms it will not terminate
 with a newline.
 
-When finished executing it will dump memory to stdout before exit.
-
 Below the code you will find full license text including an additional term
 as allowed by section 7 in the GPL. Search for LICENSE to go directly there.
-
-You may use this to bootstrap a more normal interactive LISP session:
-((\()
-  (:'set :)
-  (set 'quote ")
-  (set 'lambda \)
-  (set 'cons c)
-  (set 'car a)
-  (set 'cdr d)
-  (set 'if ?)
-  (set 'eq =)
-  (set 'atom s)
-  (set 'flambda ~)
-  (set 'print p)
-  (set 'read r)
-  (set 'eval e)
-  (set 'au-revoir (lambda () 'au-revoir))
-  (print '((C) 2011 Pål Wester. (au-revoir) to exit.) NIL)
-  ((set 'REPL
-      (lambda ()
-          (print 'Zozotez-moi~> NIL)
-          (if (eq (print(eval(read))) 'au-revoir)
-              NIL
-              (REPL)))))))
-
-NB: this already exhause a 8 bit addressing area. For a lighter one, that
-require you to use Zozotez names for things, use:
-((:'@(\()(p'ZZT-moi~>())(p(e(r)))()(@))))
-
-
-To be implemented by the end of 2011:
-form    commonname      example                              example-result
-(\)     funcall         ((\ (a) (c a a)) 'x)                        (x . x)
-(~)     maccall         ((~ (a b) (c a (c(c a (c b))))) d '(a b c))     (c)
-: a     set-car         (: a '(a) 'b)                     (b) (destructive)
-: d     set-cdr         (: d '(a) 'b)                 (a . b) (destructive)
-: :     N/A             (: : NIL 'F)           F (destuctive replaced cell)
-
-Not that a function or macro can be given a name with set. eg
-(: 'dupop (~ (a b) (c a (c(c a (c b)))))) so that
-(dupop car '(((B)))) expands to (car(car '(((B))))) and results in (B)
 
 ]
                                     **

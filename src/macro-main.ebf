@@ -153,7 +153,7 @@ Au revoir!
     $ex+
     $dx($ex-$dx(-$ax+))
     $ex(- $ax = &pc_pop)
-    # end of while eval
+    end of while eval
   )
   &lis_close
   ; &lis_print
@@ -438,8 +438,10 @@ Au revoir!
 ;;; When arguments is an atom (symbol( bind that symbol to all args supplied
 ;;; When argument list ends in a dotted pair the last symbol is bound to the rest of the arguments
 {apply_list_defun_eval
-  $fx(-)$ex(-)  ; not interesting for us now
-  %ex+   &lis_close_addr
+  $ex((-) &lis_close )+
+  $fx((-) ; if first argument element is not a list then we ignore it.
+      $ex = &lis_close_addr
+  )
   $bx 3+(-$ax 4+) $ax+  restore original %ax
   $ax   &lis_open ; open lambda-list
   $fx = &lis_get_cdr
@@ -449,11 +451,81 @@ Au revoir!
     $fx   &lis_open
     $dx = &lis_get_cdr    ; the address to the function body
     $fx = &lis_get_car    ; this is the args
-    if $fx is set
-    ((-)
-        $dx(-)
-        $cx|"Merde: apply list-lambda/macro with arguments"
-    )
+    while $fx is set do arg
+    (
+     ;; dx is off limits
+     ;; ex is list-element with data to be bound
+     &lis_close
+     $fx  &lis_open
+     $fx = &lis_get_type
+     $ex-
+     $cx = &lis_get_car
+     $ax+
+     $bx = &lis_get_cdr
+     if $fx-- not symbol
+     (-((-)$ax-$dx(-)$cx(-)|"Merde: function def with number argument")
+       $ax ( list
+             ;; it could happen we can fix thsi so that symbol code
+             ;; below does the last part?
+             &lis_close
+             $cx &lis_open
+             $fx = &lis_get_type
+             if $fx-- ((-)$ax-$cx|"Merde: non symbol argument")
+             else $ax indicates symbol
+             (
+               $fx = &lis_get_car
+               $fx &sym_open
+               &lis_close
+                if $ex
+                (
+                  %ex &lis_open
+                  $fx = &lis_get_type
+                  if $fx---((-)$ax-)
+                  else $ax
+                  (-
+                     $fx &lis_get_car
+                  )
+                )
+                $ex = &lis_get_cdr ; if it's NIL we get 0 anyway
+               ;; we now have new list element with argument in ex
+               ;; and what to bind in fx
+               ;; bx has next liste element to be processed
+               ;; dx is not to be touched
+               ;; we then only have a,c
+               $cx &sym_get_assoc_ref
+               if $cx is bound
+               (-
+                   &lis_close
+                   $ax = &lis_open_new_addr
+                   &lis_set_type_list
+                   $cx &lis_set_car
+                   $cx = &sym_get_plist_ref
+                   if $cx (- &lis_set_cdr )
+                   $ax &sym_zset_plist_ref
+               )
+               $fx &sym_zset_assoc_ref
+               $ax(-)
+             )
+           )
+     ) $ax (- symbol
+             ;; This means we bind this symbol to the rest of the arguments
+             $cx &sym_open
+             $cx &sym_get_assoc_ref
+             if $cx is bound
+             (-
+                 &lis_close
+                 $fx = &lis_open_new_addr
+                 &lis_set_type_list
+                 $cx &lis_set_car
+                 $ax = &sym_get_plist_ref
+                 if $ax (- &lis_set_cdr )
+                 $fx &sym_zset_plist_ref
+             )
+             $ex &sym_zset_assoc_ref
+           )
+     &sym_close
+     $bx(-$fx+)$ex+
+   )
     while $dx is not NIL
     (
       $ex(-)+ ; we are finished with arguments
@@ -495,7 +567,49 @@ Au revoir!
 ;;; this undoes the bindings done by
 ;;; apply_list_defun_eval
 {apply_list_defun_cleanup
-   $cx|"Merde: apply list-lambda/macro cleanup"
+    ;; if ex is set we have dotted
+    ;; if fx set we have list
+    ;; we know we have at least one parameter
+    $ex(-)
+    $dx+ ; indicate rerun
+    (-
+      $dx = &lis_get_car ; either hash or symbol location
+      if $fx indicates list
+      (-
+         $cx &lis_get_cdr ; next in line to open
+         &lis_close
+         $dx &lis_open
+         $dx &lis_get_car
+      )
+      $dx &sym_open
+      $dx &sym_get_plist_ref
+      if $dx has plist
+      (-
+        &lis_close
+        $dx &lis_open
+        $dx = &lis_get_cdr
+        $bx+
+        if $dx ( %dx &sym_zset_plist_ref $bx- )
+        else $bx (- &sym_z_plist_ref )
+        $ax = &lis_get_car
+        &lis_zero_all ; free it
+      )
+      $bx+
+      if $ax (
+           %ax &sym_zset_assoc_ref
+           $bx-
+      ) else $bx (-
+          &sym_z_assoc_ref
+      )
+      &sym_close
+      if $cx (
+        &lis_close
+        $cx &lis_open
+        $fx = &lis_get_type
+        $fx-- ; if it's list it will be 1 0 if it's symbol :)
+        $dx+
+      )
+    )
 }
 
 

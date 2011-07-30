@@ -301,6 +301,23 @@ LISP data
     &sym_from       ; move back to variable
   )                 ; self balancing
 }
+
+;;; clear methods
+;;; clear assoc ref
+{sym_z_assoc_ref
+  &sym_to
+  $assoc_ref(-)
+  &sym_from
+}
+
+;;; clear plist_ref
+{sym_z_plist_ref
+  &sym_to
+  $plist_ref(-)
+  &sym_from
+}
+
+
 ;;; opens symbol element dictated by ^0
 ;;; ^0 will be empty when done
 {sym_open
