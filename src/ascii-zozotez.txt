@@ -13,26 +13,29 @@ the Free Software Foundation, either version 3 of the License, or
 You may run this binary with any BF interpreter. I test with beef and use
 jitbf. jitbf optimizes too much and need the flag --nofuzzy to work. eg
 jitbf --nofuzzy zozotez.bf or you may compile it with jitbf --nofuzzy -p
-or awib to get native C code.
+to get native C code.
 
-Documentation: This is not complete. When finished it will have functions
-and macroes. This version only supports the primitive functions:
-form    commonname      example           example-result SE=side-effect
-"       quote           (" a) or 'a       a
-?       if              (? T NIL T)       NIL
-=       eq              (= 'a 'a)         T
-s       atom/symbolp    (s '(a b))        NIL
-c       cons            (c 'a 'b)         (a . b)
-:       set             (: 'x 'y)         y (SE: and x evaluates to y)
-a       car             (a '(a b))        a
-d       cdr             (d '(a b))        (b)
-r       read            (r)               (SE: returns expression read)
-e       eval            (e ''a)           a
-p       print           (p 'a)            a (SE: prints a)
-\       lambda          (\ (a) body)      #'(\ (a) body)
-~       flambda         (~ (a) body)      #'(~ (a) body)
-(\)     funcall         ((\ (x) x)''w)    (" w)
-(~)     maccall         ((~ (x) x)''w)    w
+Documentation for this version of Zozotez:
+form    commonname      example             example-result SE=side-effect
+"       quote           (" a) or 'a         a
+?       if              (? T NIL T)         NIL
+=       eq              (= 'a 'a)           T
+s       atom/symbolp    (s '(a b))          NIL
+c       cons            (c 'a 'b)           (a . b)
+:       set             (: 'x 'y)           y (SE: and x evaluates to y)
+a       car             (a '(a b))          a
+d       cdr             (d '(a b))          (b)
+r       read            (r)                 (SE: returns expression read)
+e       eval            (e ''a)             a
+p       print           (p 'a)              a (SE: prints a)
+\       lambda          (\ (a) body)        #'(\ (a) body)
+~       flambda         (~ (a) body)        #'(~ (a) body)
+(\)     funcall         ((\ (x)             (c w w)
+                          (c c(c x(c x))))
+                          'w)
+(~)     maccall         ((~ (x)             (w . w)
+                          (c c(c x(c x))))
+                          'w)
 
 The program-counter is seeded with (e(r)). To get output you can enclose
 your expression in p. eg.
@@ -41,7 +44,7 @@ your expression in p. eg.
 To get an interactive session you can feed it this:
 ((:'@(\()(p'Zozotez-moi~>())(p(e(r)))(@))))
 
-If you have more than 8 bit address space you may try thus classic LISP:
+If you have more than 8 bit address space you may try this classic LISP:
 ((\
   (set quote lambda cons car cdr if eq atom flambda print read eval au-revoir
   REPL list setq)
@@ -55,18 +58,30 @@ If you have more than 8 bit address space you may try thus classic LISP:
  (\ q q) ; list
  (~ ($s $o) (list set (list quote $s) $o))) ; setq
 
-note about read: Read will ignore unbalanced parenthesis and if there are
-additional elements it will enclose the input in a list. eg ")))(car x) a"
-is read as ((car x) a). it also translates 'x tp (" x) for convenience. read
-does not read dotted pair. Use c!
+Implementation notes and limitations:
+Read(r) will ignore unbalanced parenthesis and if there are additional elements
+it will enclose the input in a list. eg ")))(car x) a" is read as ((car x) a).
+It also translates 'x to (" x) for convenience. Read does not read dotted pair.
+It will register . as a symbol. Use c or use a macro to define a function/macro
+with dotted pair argument list.
 
-note about print: print takes a second argument. If it is given (any) if will
-for lists print it without the parenthesis. For atoms it will not terminate
-with a newline.
+Print(p) takes a second argument. If it is given (any) if will, for lists,
+print it without the outer parenthesis. For atoms it will not terminate with a
+newline.
+
+Numbers are not supported. All numbers will be registered as a symbol an need
+to be quoted since it is not self evaluating. Use church numerals or list
+element count as a work around. eg.:
+((\ (fibonacci + - 0 1 num)
+  (fibonacci num 0 1))
+  (\ (n a1 a2) (? n (fibonacci (- n 1) a2 (+ a1 a2)) a1))
+  (\ (x y) (? x (c (a x) (+ (d x) y)) y))
+  (\ (x y) (? y (- (d x) (d y)) x))
+  () '(1) '(1 2 3 4 5 6 7 8))
+; => (1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1) / 21 1's as expected
 
 Below the code you will find full license text including an additional term
 as allowed by section 7 in the GPL. Search for LICENSE to go directly there.
-
 ]
                                     **
                                     **

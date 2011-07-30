@@ -14,6 +14,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
+SVNREPO = https://zozotez.googlecode.com/svn
 
 all: zozotez.bf
 
@@ -32,4 +33,25 @@ clean:
 	rm -f zozotez.bf *~
 	@echo "NB: this will not clean the src directory"
 
-.PHONEY: clean test
+
+release: version zozotez.bf
+	@rm -rf zozotez-$(REV).tar.gz zozotez-$(REV).zip zozotez-$(REV)
+	svn copy  -m "tagged release zozotez-$$REV" $(SVNREPO)/trunk  $(SVNREPO)/tags/zozotez-$(REV);
+	svn export $(SVNREPO)/tags/zozotez-$(REV) zozotez-$(REV)
+	jitbf zozotez-$(REV)/zozotez.bf -p --description 'ZOZOTEZ LISP INTERPRETER by PÅL WESTER' > zozotez.c
+	gcc zozotez.c -O3 -o zozotez-$(REV)/zozotez
+	strip zozotez-$(REV)/zozotez
+	zip -r zozotez-$(REV).zip zozotez-$(REV)
+	tar -czf zozotez-$(REV).tar.gz zozotez-$(REV)
+
+
+version:
+	@if [ "$$REV" != "" -a "x`echo $$REV|sed 's/[\.0-9]//g'`" = "x" ]; then \
+		echo "tag will be zozotez-$$REV ($$REV)";\
+		true;\
+	else \
+		echo "REV=$$REV is invalid. You need to pass release REV=<revision> where revision is numbers separated by ."; \
+		false; \
+	fi
+
+.PHONEY: clean test version
