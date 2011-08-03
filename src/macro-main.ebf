@@ -642,6 +642,7 @@ Au revoir!
   (-
       $ax = &pc_pop ; get return address
       $ax(-)        ; don't store it since its already NIL there
+      $ex-
   )
   else if $ex
   (-
