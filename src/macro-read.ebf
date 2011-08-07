@@ -48,42 +48,76 @@
          (^3in-------; '
            (^3in-; (
              (^3in-; )
-               (^3in------------------; semicolon
-                  (
-                    (-) ^4tmp-  clear stuff
-                    first we store the char
-                    if cell ^1not_empty ; this only happens on the first as well, but not always on first
-                    (-
-                          ^3new_addr = &lis_get_addr_new
-                          ^3new_addr &lis_set_cdr
-                          &lis_open_new_next ; last allocated cell is always a lower address :)
-                          &lis_set_type_list
-                    )
-                    %1first_char+ this will be a first char flag
-                    if ^0atom is set ; which means we are on 2. or after char
-                    (- reduce by 1
-                       ^1first_char- = &lis_get_addr_new
-                       ^1first_char &lis_set_cdr
-                       &lis_open_new_next
-                       ^0atom(-^4hash+)
-                    )
-                    else if ^1first_char set
-                    (-
-                        %1new_addr = &lis_get_addr_new
-                        ^1new_addr &lis_set_car
-                        ^0old_addr &lis_get_addr
-                        ^0old_addr &stack_push
-                        &lis_open_new_next
-                    )
-                    &lis_set_type_number
+               (^3in-----; .
+                 (^3in-------------; semicolon
+                   (
+                      check for backslash
+                      ^4tmp+++++++(-^3in--------)+^3in-; \
+                      ((-) ^4tmp-  no matches)
+                      ;; TODO: support EOF in between escaping pipe?
+                      ^4tmp (- ^5new_char(-), $ends+ )+  ; read next as symbol char reset tmp to 1
 
-                    At this point we only use %4hash and %5new_char
-                    ^4hash(- ^3mcon+++++++++(-  ^1zero+^0hash[-^1zero-]*-1 ^1zero[+++++(-^2++++++(-^0new_hash+++++++))^0new_hash--^2end] ))
-                    ^5inp(- &lis_to $car + &lis_from ^1zero+^0hash[-^1zero-]*-1 ^1zero[+++++(-^2++++++(-^0new_hash+++++++))^0new_hash--^2end])
-                    ^5new_input+
-                    ^0atom+ increase hash with 1 to indicate atom ; 0-250 => 1-251
-                )
-                 ^4tmp ( match comment ^5input(-) ^4tmpin  ((-)&read_cr) ^2action++ ) ; read until cr and act as we have cr
+                      first we store the char
+                      if cell ^1not_empty ; this only happens on the first as well, but not always on first
+                      (
+                          ^3cdr = &lis_get_cdr ; check for dotted pair
+                          if ^3cdr is set ((-) ^1continue- ^4tmp- ^5new(-)+ )
+                          else ^1continue
+                          (-
+                            ^3new_addr = &lis_get_addr_new
+                            ^3new_addr &lis_set_cdr
+                            &lis_open_new_next ; last allocated cell is always a lower address :)
+                            &lis_set_type_list
+                          )
+                      )+
+                      if ^4tmp set
+                      (-
+                        ^1first_char  this will be a first char flag
+                        if ^0atom is set ; which means we are on 2. or after char
+                        (- reduce by 1
+                          ^1first_char- = &lis_get_addr_new
+                          ^1first_char &lis_set_cdr
+                          &lis_open_new_next
+                          ^0atom(-^4hash+)
+                        )
+                        else if ^1first_char set
+                        (-
+                            %1new_addr = &lis_get_addr_new
+                            ^1new_addr &lis_set_car
+                            ^0old_addr &lis_get_addr
+                            $ends(-$end+)
+                            ^0old_addr &stack_push
+                            $end(-$ends+)
+                            &lis_open_new_next
+                        )
+                        &lis_set_type_number
+
+                        At this point we only use %4hash and %5new_char
+                        ^4hash(- ^3mcon+++++++++(-  ^1zero+^0hash[-^1zero-]*-1 ^1zero[+++++(-^2++++++(-^0new_hash+++++++))^0new_hash--^2end] ))
+                        ^5inp(- &lis_to $car + &lis_from ^1zero+^0hash[-^1zero-]*-1 ^1zero[+++++(-^2++++++(-^0new_hash+++++++))^0new_hash--^2end])
+                        ^0atom+ increase hash with 1 to indicate atom ; 0-250 => 1-251
+
+                        ^2not_pipe+
+                        if $ends indicate pipe
+                        (-
+                          ;; TODO: support EOF in between escaping pipe?
+                          ^3tmp,(-^4+^5+)
+                          ^3tmp 11+(-^4in 11-)+^4in 3-;
+                          ((-) ^3tmp- ^2not_pipe- ^1first_char+ no match )+
+                          if ^3tmp indicate matching pipe
+                          (-
+                            ^4redo-
+                          )
+                        )+
+                        else ^2not_pipe
+                        (-
+                          ^5new_input(-)+
+                          $ends-
+                        )
+                      )
+                    )
+                   ^4tmp ( match comment ^5input(-) ^4tmpin  ((-)&read_cr) ^2action++ ) ; read until cr and act as we have cr
+                ) ^4tmp (- match 'dot' ^2action++++++ ); 6 == space / dot
               ) ^4tmp (- match 'cl'^2action++++ )  ; 4 == space / close
             ) ^4tmp (- match 'op'  ^2action+++  )  ; 3 == space / open
           ) ^4tmp (- match '''     ^2action+++++)  ; 5 == space / quote
@@ -160,7 +194,18 @@
         ^5new_input+ ;; assume new input always
         ^3else+
         ^2action switch --
-        (-(-(-((-) ^3else-)
+        (-(-(-(-((-) ^3else-)
+            ^3else ( dot ; eg. (a . b )
+                     ^2cdr = &lis_get_cdr
+                     if ^2cdr is NIL ((-) ^3-)
+                     ^3else
+                     (
+                        %3else = &lis_get_car
+                        ^3else &lis_set_cdr ; NB its +1 to notice NIL
+                        &lis_zero_car
+                        ^1not_empty(-)
+                     )
+                   ))
             ^3else ( quote ; 'a => (quote a), '(a) => (quote (a))
                       if cell ^1not_empty ; this only happens on the first as well, but not always on first
                       (-
@@ -194,7 +239,19 @@
                       if ^3stack not empty
                       (-
                           ^2empty+
-                          if ^1not_empty ((-) ^2empty- )
+                          if ^1not_empty
+                          ((-)
+                              ^2empty-
+                              ^2cdr = &lis_get_cdr
+                              if ^2cdr is not NIL
+                              (- ; indicated dotted pair
+                                ^1car = &lis_get_car
+                                &lis_zero_car
+                                &lis_zero_cdr
+                                ^2cdr &lis_set_car
+                                ^1car &lis_set_cdr
+                              )
+                          )
                           else if ^2empty
                           (-
                               &lis_zero_type ^4set_car_null+ ; free this cell and set a flag to set car to nil
@@ -221,26 +278,39 @@
                       )
                    ))
             ^3else (  open
+                      ^4ok+
                       if cell ^1not_empty ; this only happens on the first as well, but not always on first
-                      (-
-                            ^1new_addr = &lis_get_addr_new
-                            ^1new_addr(-^2stack_copy+^3cdr_copy+)
-                            ^3new_addr- &lis_set_cdr ; - 1 because we didnt remove the else flag
-                            &lis_open_new_next ; last allocated cell is always a lower address :)
-                            &lis_set_type_list
+                      (
+                            ^3empty-
+                            ^2cdr = &lis_get_cdr ; check for dotted pair
+                            if ^2cdr is not nil ((-) ^1- ^4ok-)
+                            else ^1
+                            (-
+                              ^1new_addr = &lis_get_addr_new
+                              ^1new_addr(-^2stack_copy+^3cdr_copy+)
+                              ^3new_addr &lis_set_cdr ; - 1 because we didnt remove the else flag
+                              &lis_open_new_next ; last allocated cell is always a lower address :)
+                              &lis_set_type_list
+                            )
                       )
                       if ^3empty cons
                       (-
                             ^2stack_copy = &lis_get_addr
+                      )+
+                      if ^4ok
+                      (-
+                        ^3not_ok-
+                        ^2stack_copy &stack_push
+                        ^1new_addr = &lis_get_addr_new
+                        ^1new_addr &lis_set_car
+                        &lis_open_new_next
+                        &lis_set_type_list
                       )
-                      ^2stack_copy &stack_push
-                      ^1new_addr = &lis_get_addr_new
-                      ^1new_addr &lis_set_car
-                      &lis_open_new_next
-                      &lis_set_type_list
-                      ))
+                      else ^3not_ok (-
+                       ^1+
+                      )))
             ^3else ( linefeed NB reusing flag
-                      ^2stack = &stack_is_nonempty
+                      #^2stack = &stack_is_nonempty
                       if ^2stack is not empty (- ^3else- )
                       ^3else then we are finished reading if we have cons at all
                       (-

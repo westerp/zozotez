@@ -81,7 +81,7 @@
           ^3type- = &lis_get_type
           if ^3type--- is not list == dotted pair
           (
-            (-) |" . "(-)
+            (-) |" ."(-)
             ^5cdr+ = &lis_close_addr
             ^4list_copy+ ; how to set ^2list to 1?
             ^2list_flag-
