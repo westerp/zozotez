@@ -23,7 +23,7 @@
 ;;;;
 ;;;; main flow of program / eval implementation
 ;;;; This early stage it will be a (loop (print(read)))
-$ax|"Zozotez read-print-loop (no eval) Type NIL/() to exit
+$ax|"Zozotez read-print-loop (no eval) ()/NIL to exit
 "
   we dont have eval so we do read print loop
   $ax(-)+
@@ -39,14 +39,11 @@ $ax|"Zozotez read-print-loop (no eval) Type NIL/() to exit
   $ax &pc_pop
   $ax-&lis_open
   $bx = &lis_get_car
+  $bx (
   &lis_close
-  $cx+
-  if $bx is not null
-  [
-    $ax+ $cx-           ; set ax so that we read another time
-  ]@bx
-  $cx[-$dx]             ; correct pointer
-  $ax &zozot_print      ; print anyway
+  $ax+ &zozot_print      ; print anyway
+  $ax+
+  )
 )
   |"Au revoir
 "
