@@ -809,6 +809,7 @@ Au revoir!
             $dx &sym_zset_assoc_ref
             &sym_close
          )
+	 $ex (- $cx(-)|"Merde: first arg evaluated to non-symbol is")
        )
        $ex (- $cx(-)|"Merde: set-cdr" ))
       $ex  (- $cx(-)|"Merde: set-car" )
