@@ -48,7 +48,6 @@
         (%ax-; \3
           (%ax-; \4
             (%ax(-)   match pre_apply keep %bx flag
-                      ;$cx|"Merde: pre-apply"
                       ; check for 2 (quote), 3 (if), 4(macro), 5(lambda)
                       ; then check for the range 6-17 (functions)
                       ; then open car to:
@@ -470,7 +469,7 @@ Au revoir!
              &lis_close
              $cx &lis_open
              $fx = &lis_get_type
-             if $fx-- ((-)$ax-$cx|"Merde: non symbol argument")
+             if $fx-- ((-)$ax-$dx(-)$cx(-)|"Merde: non symbol argument")
              else $ax indicates symbol
              (
                $fx = &lis_get_car
