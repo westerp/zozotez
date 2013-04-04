@@ -21,19 +21,14 @@ APPLY_CODE = ../tools/apply_code.pl ascii-zozotez.txt
 TEST_BINS   = test-read.bf test-print.bf test-readprint.bf
 TEST_FILES  = test/read.ebf
 MACRO_FILES = macro-read.ebf macro-print.ebf macro-main.ebf
-#MACRO_FILES = macro-main.ebf
-VERSION = version.bf
 BASE = zozotez-base.ebf
 TAIL = tail.ebf
-
 test: $(TEST_BINS)
 all: test-zozotez.bf
-
-.SUFFIXES:
 .SUFFIXES: .bf .ebf
 
 test-zozotez.ebf: $(MACRO_FILES) $(BASE) $(TAIL)
-	cat $(MACRO_FILES) $(BASE) $(TAIL) > test-zozotez.ebf
+	cat $(MACRO_FILES) $(BASE) $(TAIL) | sed 's/ZOZOTEZVERSION/Zozotez v$(VERSION)/g' > test-zozotez.ebf
 
 test-read.ebf:  macro-read.ebf $(BASE) test/read.ebf
 	cat  macro-read.ebf $(BASE) test/read.ebf > test-read.ebf
@@ -58,4 +53,4 @@ info:
 	@echo and change EBF_BIN to a combination of the ebf.bf and a intrepreter to run it.
 	@echo Go to http://sylwester.no/ebf/ to get it.
 
-.PHONY: clean info
+.PHONY: clean info version 

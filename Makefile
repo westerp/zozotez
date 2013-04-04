@@ -14,44 +14,64 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-SVNREPO = https://zozotez.googlecode.com/svn
+VERSION    = $(shell head VERSION)
+MAJOR      = $(shell echo $(VERSION) | sed "s/^\([0-9]*\).*/\1/")
+MINOR	   = $(shell echo $(VERSION) | sed "s/[0-9]*\.\([0-9]*\)/\1/")
+PATCH      = 
 
 all: zozotez.bf
 
 test:
-	@make -C src all
+	@make -C src all VERSION=$VERSION-$PATCH
 
-zozotez.bf: 	src/test-zozotez.bf src/ascii-zozotez.txt COPYING
+zozotez.bf: src/test-zozotez.bf src/ascii-zozotez.txt COPYING
+	@if [ -d .git ]; then\
+		PATCH=$$(git rev-parse --short=4 HEAD);\
+	fi;\
 	cat src/test-zozotez.bf | perl -e '$$/=undef;$$_=<>;s/[^\Q+-<>,.[]\E]//g;s/\Q<>\E|\Q><\E//g;s/\Q-+\E|\Q+-\E//g;print' | tools/apply_code.pl src/ascii-zozotez.txt > zozotez.tmp &&\
-	cat zozotez.tmp COPYING | sed "s~COMPILERINFO~`echo '?'| tools/ebf | sed 's/\\$$//g'`~g" > zozotez.bf &&\
+	cat zozotez.tmp COPYING | sed "s~COMPILERINFO~`echo '?'| tools/ebf | sed 's/\\$$//g'`~g" |\
+	sed s/ZOZOTEZVERSION/$(VERSION)-$${PATCH}/g > zozotez.bf &&\
 	rm -f zozotez.tmp
 
 src/test-zozotez.bf:  src
-	@make -C src test-zozotez.bf
+	@if [ -d .git ]; then\
+		PATCH=$$(git rev-parse --short=4 HEAD);\
+	fi;\
+	make -C src test-zozotez.bf VERSION=$(VERSION)-$${PATCH}
 
 clean:
 	rm -f zozotez.bf *~
 	@echo "NB: this will not clean the src directory"
 
+bump-major:
+	@echo `expr 1 + $(MAJOR)`.0 > VERSION
+	cat VERSION
 
-release: version zozotez.bf
-	@rm -rf zozotez-$(REV).tar.gz zozotez-$(REV).zip zozotez-$(REV)
-	svn copy  -m "tagged release zozotez-$$REV" $(SVNREPO)/trunk  $(SVNREPO)/tags/zozotez-$(REV);
+bump-minor:
+	@echo $(MAJOR).`expr 1 + $(MINOR)` > VERSION
+	cat VERSION
+
+new-version: bump-minor
+
+	
+release:
+	@STATUS=$$(git status --porcelain);\
+	BRANCH=$$(git status | grep 'On branch master');\
+	if [ "x$${BRANCH}" = "x" ]; then\
+		echo ERROR: Not release branch. Please switch;\
+		git status; \
+	elif [ "x$${STATUS}" != "x" ]; then\
+		echo ERROR: Working directory is dirty >&2;\
+		git status --porcelain;\
+        else\
+		@rm -rf zozotez-$(VERSION).tar.gz zozotez-$(VERSION).zip zozotez-$(VERSION)\
+		git checkout-index  --prefix=
 	svn export $(SVNREPO)/tags/zozotez-$(REV) zozotez-$(REV)
-	jitbf zozotez-$(REV)/zozotez.bf -p --description 'ZOZOTEZ LISP INTERPRETER by PÅL WESTER' > zozotez.c
+	jitbf zozotez-$(REV)/zozotez.bf -p --description "ZOZOTEZ LISP INTERPRETER $${VERSION} by PÅL WESTER" > zozotez.c
 	gcc zozotez.c -O3 -o zozotez-$(REV)/zozotez
 	strip zozotez-$(REV)/zozotez
 	zip -r zozotez-$(REV).zip zozotez-$(REV)
 	tar -czf zozotez-$(REV).tar.gz zozotez-$(REV)
 
 
-version:
-	@if [ "$$REV" != "" -a "x`echo $$REV|sed 's/[\.0-9]//g'`" = "x" ]; then \
-		echo "tag will be zozotez-$$REV ($$REV)";\
-		true;\
-	else \
-		echo "REV=$$REV is invalid. You need to pass release REV=<revision> where revision is numbers separated by ."; \
-		false; \
-	fi
-
-.PHONEY: clean test version
+.PHONEY: clean test bump-major bump-minor new-version
