@@ -24,25 +24,31 @@ all: zozotez.bf
 test:
 	@make -C src all VERSION=$VERSION-$PATCH
 
-zozotez.bf: src/test-zozotez.bf src/ascii-zozotez.txt COPYING
+zozotez.bf: src/test-zozotez.bf src/ascii-zozotez.txt COPYING VERSION
 	@if [ -d .git ]; then\
-		PATCH=$$(git rev-parse --short=4 HEAD);\
+		PATCH=-$$(git rev-parse --short=4 HEAD);\
 	fi;\
 	cat src/test-zozotez.bf | perl -e '$$/=undef;$$_=<>;s/[^\Q+-<>,.[]\E]//g;s/\Q<>\E|\Q><\E//g;s/\Q-+\E|\Q+-\E//g;print' | tools/apply_code.pl src/ascii-zozotez.txt > zozotez.tmp &&\
 	cat zozotez.tmp COPYING | sed "s~COMPILERINFO~`echo '?'| tools/ebf | sed 's/\\$$//g'`~g" |\
-	sed s/ZOZOTEZVERSION/$(VERSION)-$${PATCH}/g > zozotez.bf &&\
+	sed s/ZOZOTEZVERSION/$(VERSION)$${PATCH}/g > zozotez.bf &&\
 	rm -f zozotez.tmp
 
-src/test-zozotez.bf:  src
+src/test-zozotez.bf: src VERSION
 	@if [ -d .git ]; then\
-		PATCH=$$(git rev-parse --short=4 HEAD);\
+		PATCH=-$$(git rev-parse --short=4 HEAD);\
 	fi;\
-	make -C src test-zozotez.bf VERSION=$(VERSION)-$${PATCH}
+	make -C src test-zozotez.bf VERSION=$(VERSION)$${PATCH}
 
 clean:
 	rm -f zozotez.bf *~
+	rm -rf zozotez-$(VERSION).tar.gz zozotez-$(VERSION).zip zozotez-$(VERSION) zozotez.c
 	@echo "NB: this will not clean the src directory"
 
+rebuild-binary:
+	rm -rf zozotez.bf *~
+	make -C src clean
+	make zozotez.bf
+	
 bump-major:
 	@echo `expr 1 + $(MAJOR)`.0 > VERSION
 	cat VERSION
@@ -52,26 +58,34 @@ bump-minor:
 	cat VERSION
 
 new-version: bump-minor
-
 	
-release:
-	@STATUS=$$(git status --porcelain);\
+release: clean
+	@if [ -d .git ]; then\
+		PATCH=-$$(git rev-parse --short=4 HEAD);\
+	fi;\
+	STATUS=$$(git status --porcelain);\
 	BRANCH=$$(git status | grep 'On branch master');\
 	if [ "x$${BRANCH}" = "x" ]; then\
 		echo ERROR: Not release branch. Please switch;\
-		git status; \
+		git status;\
 	elif [ "x$${STATUS}" != "x" ]; then\
 		echo ERROR: Working directory is dirty >&2;\
 		git status --porcelain;\
         else\
-		@rm -rf zozotez-$(VERSION).tar.gz zozotez-$(VERSION).zip zozotez-$(VERSION)\
-		git checkout-index  --prefix=
-	svn export $(SVNREPO)/tags/zozotez-$(REV) zozotez-$(REV)
-	jitbf zozotez-$(REV)/zozotez.bf -p --description "ZOZOTEZ LISP INTERPRETER $${VERSION} by PÅL WESTER" > zozotez.c
-	gcc zozotez.c -O3 -o zozotez-$(REV)/zozotez
-	strip zozotez-$(REV)/zozotez
-	zip -r zozotez-$(REV).zip zozotez-$(REV)
-	tar -czf zozotez-$(REV).tar.gz zozotez-$(REV)
+        	make rebuild-binary;\
+		git checkout-index -a --prefix=zozotez-$(VERSION)/;\
+		cp zozotez.bf zozotez-$(VERSION);\
+		jitbf zozotez-$(VERSION)/zozotez.bf -p --description "ZOZOTEZ LISP INTERPRETER v$(VERSION)$${PATCH} by PÅL WESTER" > zozotez.c;\
+		gcc zozotez.c -m32 -O2 -o zozotez-$(VERSION)/zozotez;\
+		strip zozotez-$(VERSION)/zozotez;\
+		zip -r zozotez-$(VERSION).zip zozotez-$(VERSION);\
+		tar -czf zozotez-$(VERSION).tar.gz zozotez-$(VERSION);\
+	fi
 
+tag:
+	git tag -a zozotez-$(VERSION) -m "Tagged release $(VERSION)"
 
-.PHONEY: clean test bump-major bump-minor new-version
+push: 
+	git push --tags
+
+.PHONEY: clean test bump-major bump-minor new-version release rebuild-binary tag push
