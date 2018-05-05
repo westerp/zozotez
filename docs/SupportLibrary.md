@@ -41,4 +41,4 @@ The `^0` is the key here. It is the address of which the macro was called. For t
 }
 ```
 
-To see how the machine steps through its code continue reading [The Zozotez Machine](ZozotezMachine.md]
+To see how the machine steps through its code continue reading [The Zozotez Machine](ZozotezMachine.md)
