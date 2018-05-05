@@ -89,3 +89,4 @@ If you have looked at the source you already know this, but there are no symbols
 ```
 
 This creates a read-eval-print-loop with normal name binding to the functions through the arguments. The read-eval-print actually uses them in it's implementation. All arguments in any position in that list are either primitive form-symbols or functions. This will work when Zozotez is fully implemented.
+

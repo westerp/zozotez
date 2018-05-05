@@ -4,7 +4,7 @@ environment. It's a fully LISP1 compliant interpreter if used with the largest b
 
 ![http://sylwester.no/gcodeimg/zozotez.png](http://sylwester.no/gcodeimg/zozotez.png)
 
-The summer 2010 and 2011 I created [EBF](http://code.google.com/p/ebf-compiler/). A Compiler for a superset of `BrainFuck` which makes `BrainFuck` object code. I wrote it because I wanted to learn how programming languages was bootstrapped. It is of course written in itself. EBF is the language I have written Zozotez. Zozotez is in itself extendable since it has the power of both functions and macroes :)
+The summer 2010 and 2011 I created [EBF](http://sylwester.no/ebf-compiler/). A Compiler for a superset of `BrainFuck` which makes `BrainFuck` object code. I wrote it because I wanted to learn how programming languages was bootstrapped. It is of course written in itself. EBF is the language I have written Zozotez. Zozotez is in itself extendable since it has the power of both functions and macroes :)
 
 `BrainFuck` is an Esoteric language/turing tarpit that only has
 enough instructions to become Turing Complete which means that
@@ -87,6 +87,7 @@ When read reads a symbol it creates a hash using a similar method as EBF. It has
 ((\ (x) (list x (list (" ") x))) (" (\ (x) (list x (list (" ") x)))))
 ```
 
+If you'd like to know about the design og Zozotez I've added some information on that, starting with [memory design](MemoryDesign.md).
 
 # This site is a member of a `Web Ring`. #
 To browse visit [The Esoteric Programming Languages Ring](http://ss.webring.com/navbar?f=l;y=webringcom44;u=defurl1)

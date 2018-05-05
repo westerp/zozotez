@@ -40,3 +40,5 @@ The `^0` is the key here. It is the address of which the macro was called. For t
   [@end to $lis_crumble] ; loop until first lis_crimble which is clear
 }
 ```
+
+To see how the machine steps through its code continue reading [The Zozotez Machine](ZozotezMachine.md]
