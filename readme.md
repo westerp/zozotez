@@ -87,7 +87,7 @@ When read reads a symbol it creates a hash using a similar method as EBF. It has
 ((\ (x) (list x (list (" ") x))) (" (\ (x) (list x (list (" ") x)))))
 ```
 
-If you'd like to know about the design og Zozotez I've added some information on that, starting with [memory design](MemoryDesign.md).
+If you'd like to know about the design og Zozotez I've added some information on that, starting with [memory design](docs/MemoryDesign.md).
 
 # This site is a member of a `Web Ring`. #
 To browse visit [The Esoteric Programming Languages Ring](http://ss.webring.com/navbar?f=l;y=webringcom44;u=defurl1)
